@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt;
+use std::str::FromStr;
 
 use failure::{bail, format_err, Fallible};
 use itertools::Itertools;
@@ -115,10 +116,31 @@ impl Coord {
 /// More user-friendly coordinates easier to undertand and type. Row
 /// is counted from 1 and start from the top. Card is counted from 1
 /// and starts from the left.
-#[derive(Debug)]
+#[derive(PartialEq, Eq, Debug)]
 struct UserCoord {
     row: u8,
     card: u8,
+}
+
+impl FromStr for UserCoord {
+    type Err = failure::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let trimmed = s.trim();
+        let chars: Vec<char> = trimmed.chars().collect();
+        let usage = format!("Can't parse UserCoord, expected four chars like this: R1C2, got: {}", s);
+
+        if chars.len() != 4 {
+            bail!(usage);
+        } else {
+            return match (chars[0].to_ascii_lowercase(), chars[2].to_ascii_lowercase()) {
+                ('r', 'c') => Ok(UserCoord {
+                    row: trimmed[1..2].parse::<u8>()?,
+                    card: trimmed[3..4].parse::<u8>()?,
+                }),
+                _ => bail!(usage),
+            };
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -353,6 +375,32 @@ mod test {
         test_failure!(0, 1);
         test_failure!(1, 0);
         test_failure!(20, 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_user_coord_parsing() -> Fallible<()> {
+        macro_rules! test {
+            ($input:literal => $row:literal, $card:literal) => {
+                assert_eq!($input.parse::<UserCoord>()?, UserCoord { row: $row, card: $card });
+            };
+        }
+
+        macro_rules! test_failure {
+            ($input:literal) => {
+                assert!($input.parse::<UserCoord>().is_err());
+            };
+        }
+
+        test!("R1C2" => 1, 2);
+        test!("r4c1" => 4, 1);
+        test!("  r2c2  " => 2, 2);
+
+        test_failure!("RR4c1");
+        test_failure!("R4 C1");
+        test_failure!("R4C111");
+        test_failure!("12");
 
         Ok(())
     }
