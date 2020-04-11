@@ -97,7 +97,7 @@ struct Board {
 }
 
 impl Board {
-    fn start() -> Board {
+    fn starting_position() -> Board {
         let jade = Card {
             kind: CardKind::Jade,
             dice: vec![],
@@ -249,9 +249,9 @@ impl fmt::Display for Game {
 }
 
 impl Game {
-    fn start() -> Self {
+    fn new() -> Self {
         Game {
-            board: Board::start(),
+            board: Board::starting_position(),
             player1: Player::first(),
             player2: Player::second(),
             player1_moves: true,
@@ -265,11 +265,12 @@ enum GameMove {
     Move(Die, Coord, Coord),
     Fight(Coord),
     Surprise(Coord, Coord),
+    Submit,
 }
 
 fn main() {
     println!("Rokumon, v0.1");
 
-    let game = Game::start();
+    let game = Game::new();
     println!("{}", game);
 }
