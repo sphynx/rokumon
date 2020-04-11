@@ -656,6 +656,33 @@ fn main() {
     println!("{}", game);
 }
 
+
+mod parsers {
+    use nom::IResult;
+
+    //use nom::bytes::complete::tag;
+    //use nom::character::complete::alpha1;
+    use nom::character::complete::char;
+    use nom::character::complete::digit1;
+    //use nom::character::complete::line_ending;
+    //use nom::combinator::map;
+    use nom::combinator::map_res;
+    use nom::combinator::value;
+    //use nom::multi::separated_nonempty_list;
+    //use nom::sequence::separated_pair;
+    use nom::branch::alt;
+
+
+    fn unsigned(i: &str) -> IResult<&str, u8> {
+        map_res(digit1, |s: &str| s.parse())(i)
+    }
+
+    fn sign(i: &str) -> IResult<&str, i8> {
+        alt((value(-1, char('-')), |i| Ok((i, 1))))(i)
+    }
+
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
