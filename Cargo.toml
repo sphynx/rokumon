@@ -1,0 +1,10 @@
+[package]
+name = "rokumon"
+version = "0.1.0"
+authors = ["Ivan Veselov <veselov@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+rand = "0.7"
+itertools = "0.9"
+
