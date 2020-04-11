@@ -1,4 +1,4 @@
-# Implement conversion between user coordinates and internal ones
+# DONE Implement conversion between user coordinates and internal ones
 
 `R1C2` (i.e. row 1, card 2: rows counted starting from 1 from the top,
 cards counted starting from 1 from the left) and `<0, 0, 0>` (i.e.
@@ -18,6 +18,8 @@ Surprise is tricky for the user because it requires our coordinates.
 
 So there should be a way to show the internal coordinates of available
 positions while repositioning a particular card.
+
+I think we should use `nom` for that.
 
 # Implement actual game rules
 
