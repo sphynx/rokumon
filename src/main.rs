@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
+use failure::{bail, format_err, Fallible};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
 
@@ -70,7 +71,7 @@ impl fmt::Display for Card {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 struct Coord {
     x: i8,
     y: i8,
@@ -81,6 +82,43 @@ impl fmt::Display for Coord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({}, {}, {})", self.x, self.y, self.z)
     }
+}
+
+impl Coord {
+    /// Convert between two types of coordinates in presence of given
+    /// board.
+    #[allow(dead_code)]
+    fn from_user_coord(user_coord: &UserCoord, board: &Board) -> Fallible<Self> {
+        if user_coord.row == 0 || user_coord.card == 0 {
+            bail!("User coord numeration starts from 1");
+        }
+
+        let user_row = user_coord.row as usize - 1;
+        let user_card = user_coord.card as usize - 1;
+
+        let mut rows: Vec<i8> = board.cards.keys().map(|c| c.y).collect();
+        rows.as_mut_slice().sort();
+        rows.dedup();
+
+        if user_row <= rows.len() {
+            board
+                .row_positions_iter(rows[user_row])
+                .nth(user_card)
+                .copied()
+                .ok_or_else(|| format_err!("Card is out of bounds: {}", user_coord.card))
+        } else {
+            bail!("Row is out of bounds: {}", user_coord.row);
+        }
+    }
+}
+
+/// More user-friendly coordinates easier to undertand and type. Row
+/// is counted from 1 and start from the top. Card is counted from 1
+/// and starts from the left.
+#[derive(Debug)]
+struct UserCoord {
+    row: u8,
+    card: u8,
 }
 
 #[allow(dead_code)]
@@ -134,8 +172,7 @@ impl Board {
                 // 4 cards in the bottom row, 3 cards in the top row.
                 cards.insert(
                     Coord { x, y, z: -x - y },
-                    deck.pop()
-                        .expect("Deck should have enough cards for starting position"),
+                    deck.pop().expect("Deck should have enough cards for starting position"),
                 );
             }
         }
@@ -149,20 +186,32 @@ impl Board {
     }
 
     fn top_row(&self) -> i8 {
-        self.cards.keys().map(|c| c.y).min().unwrap()
+        self.cards.keys().map(|c| c.y).min().expect("top_row: cards should be non-empty")
     }
 
     fn bottom_row(&self) -> i8 {
-        self.cards.keys().map(|c| c.y).max().unwrap()
+        self.cards.keys().map(|c| c.y).max().expect("bottom_row: cards should be non-empty")
     }
 
-    /// Cards from given `row` ordered by `x` coordinate.
-    fn cards_in_row(&self, row: i8) -> impl Iterator<Item = &Card> {
+    /// Cards from given `row` (`y` coordinate) ordered by `x`
+    /// coordinate.
+    fn row_cards_iter(&self, row: i8) -> impl Iterator<Item = &Card> {
+        self.row_iter(row).map(|(_, card)| card)
+    }
+
+    /// Positions of cards from given `row` (`y` coordinate) ordered
+    /// by `x` coordinate.
+    fn row_positions_iter(&self, row: i8) -> impl Iterator<Item = &Coord> {
+        self.row_iter(row).map(|(pos, _)| pos)
+    }
+
+    /// Iterator over positions/cards from given `row` (`y`
+    /// coordinate) ordered by `x` coordinate.
+    fn row_iter(&self, row: i8) -> impl Iterator<Item = (&Coord, &Card)> {
         self.cards
             .iter()
             .filter(move |(coord, _)| coord.y == row)
             .sorted_by_key(|(coord, _)| coord.x)
-            .map(|(_, card)| card)
     }
 }
 
@@ -172,7 +221,7 @@ impl fmt::Display for Board {
         let bottom = self.bottom_row();
 
         for y in top..=bottom {
-            for c in self.cards_in_row(y) {
+            for c in self.row_cards_iter(y) {
                 // TODO: add coordinates as well
                 // Without them we can't distinguish some cases.
                 write!(f, "{} ", c)?;
@@ -205,13 +254,7 @@ impl Player {
         let d = Die::new;
         Player {
             name: String::from("Player 2"),
-            dice: vec![
-                d(1, Black),
-                d(3, Black),
-                d(3, Black),
-                d(5, Black),
-                d(1, White),
-            ],
+            dice: vec![d(1, Black), d(3, Black), d(3, Black), d(5, Black), d(1, White)],
         }
     }
 }
@@ -244,7 +287,7 @@ impl fmt::Display for Game {
         write!(f, "{}", self.board)?;
         writeln!(f, "{}", self.player1)?;
         writeln!(f, "{}", self.player2)?;
-        writeln!(f, "to move: {}", if self.player1_moves {"1"} else {"2"})
+        writeln!(f, "to move: {}", if self.player1_moves { "Player 1" } else { "Player 2" })
     }
 }
 
@@ -273,4 +316,44 @@ fn main() {
 
     let game = Game::new();
     println!("{}", game);
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use failure::Fallible;
+
+    #[test]
+    fn test_coord_conversion() -> Fallible<()> {
+        let board = Board::starting_position();
+
+        macro_rules! test {
+            ($row:literal, $card:literal => $x:literal, $y:literal, $z:literal) => {
+                assert_eq!(
+                    Coord::from_user_coord(&UserCoord { row: $row, card: $card }, &board)?,
+                    Coord { x: $x, y: $y, z: $z }
+                );
+            };
+        }
+
+        macro_rules! test_failure {
+            ($row:literal, $card:literal) => {
+                assert!(Coord::from_user_coord(&UserCoord { row: $row, card: $card }, &board).is_err());
+            };
+        }
+
+        test!(1, 1 => 1, -1, 0);
+        test!(1, 2 => 2, -1, -1);
+        test!(1, 3 => 3, -1, -2);
+        test!(2, 1 => 0, 0, 0);
+        test!(2, 2 => 1, 0, -1);
+        test!(2, 3 => 2, 0, -2);
+        test!(2, 4 => 3, 0, -3);
+
+        test_failure!(0, 1);
+        test_failure!(1, 0);
+        test_failure!(20, 1);
+
+        Ok(())
+    }
 }
