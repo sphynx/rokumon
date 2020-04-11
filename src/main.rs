@@ -35,6 +35,19 @@ impl Die {
     pub fn belongs_to_player1(&self) -> bool {
         self.color == DiceColor::Red
     }
+
+    /// Returns (winner, loser) pair.
+    pub fn compare_dice(d1: Die, d2: Die) -> (Die, Die) {
+        if d1.color == DiceColor::White && d2.value == 6 && d2.color == DiceColor::Red {
+            (d1, d2)
+        } else if d2.color == DiceColor::White && d1.value == 6 && d1.color == DiceColor::Red {
+            (d2, d1)
+        } else if d1.value > d2.value {
+            (d1, d2)
+        } else {
+            (d2, d1)
+        }
+    }
 }
 
 // B3, W1, R6 and so on.
@@ -52,6 +65,9 @@ impl fmt::Display for Die {
 #[derive(Clone, Debug)]
 struct Card {
     kind: CardKind,
+
+    /// The dice are appended to the end. I.e. the top-most die which
+    /// covers everything is the last in the vector.
     dice: Vec<Die>,
 }
 
@@ -70,7 +86,7 @@ impl fmt::Display for Card {
             .map(|d| format!("{}", d))
             .collect::<Vec<String>>()
             .as_slice()
-            .join(" > ");
+            .join(" < ");
 
         write!(f, "{}[{}]", kind, dice_str)
     }
@@ -229,7 +245,6 @@ impl Board {
         }
     }
 
-    #[allow(dead_code)]
     fn refresh_adj_triples(&mut self) {
         self.adj_triples = Self::adjacent_triples(&self.layout, self.cards.keys());
     }
@@ -285,11 +300,8 @@ impl Board {
         self.cards.get(coord)
     }
 
-    /// Iterator over neighbouring (immediately adjacent) cards for a
-    /// give position.
-    #[allow(dead_code)]
-    fn neighbours_iter(&self, pos: Coord) -> impl Iterator<Item = &Coord> {
-        self.cards.keys().filter(move |c| c.distance(&pos) == 1)
+    fn card_at_mut(&mut self, coord: &Coord) -> Option<&mut Card> {
+        self.cards.get_mut(coord)
     }
 
     /// Iterator over neighbouring (immediately adjacent) cards for a
@@ -321,7 +333,6 @@ impl Board {
         }
     }
 
-    #[allow(dead_code)]
     fn adjacent_triples<'a>(layout: &Layout, coords: impl Iterator<Item = &'a Coord>) -> Vec<(Coord, Coord, Coord)> {
         let mut result = vec![];
 
@@ -448,10 +459,17 @@ impl Game {
         }
     }
 
-    #[allow(dead_code)]
-    fn is_valid_move(&self, mv: &GameMove) -> bool {
+    fn current_player_mut(&mut self) -> &mut Player {
+        if self.player1_moves {
+            &mut self.player1
+        } else {
+            &mut self.player2
+        }
+    }
+
+    fn is_valid_move(&self, game_move: &GameMove) -> bool {
         use GameMove::*;
-        match mv {
+        match game_move {
             Place(die, coord) => {
                 let player_has_die = self.current_player().dice.contains(die);
                 let target_card_is_empty = self.board.has_empty_card_at(coord);
@@ -500,9 +518,84 @@ impl Game {
     }
 
     #[allow(dead_code)]
-    fn apply_move(&mut self, _mv: &GameMove) {}
+    fn apply_move(&mut self, game_move: &GameMove) -> Fallible<()> {
+        use GameMove::*;
 
-    #[allow(dead_code)]
+        if self.is_valid_move(game_move) {
+            // Here we consider all moves validated, so we use unwrap
+            // freely, even though there might be still be failures
+            // due to programming errors.
+            match game_move {
+                Place(die, coord) => {
+                    let player = self.current_player_mut();
+
+                    // Remove the die from player's stock.
+                    let die_ix = player.dice.iter().position(|d| d == die).unwrap();
+                    player.dice.remove(die_ix);
+
+                    // Add the die to the card.
+                    let card = self.board.card_at_mut(coord).unwrap();
+                    card.dice.push(die.clone());
+                }
+
+                Move(_die, from, to) => {
+                    let from_card = self.board.card_at_mut(from).unwrap();
+                    let die = from_card.dice.pop().unwrap();
+
+                    // Here, we should check for victory condition
+                    // immediately while the die is in flight. If it
+                    // leads to the win for the other player, we
+                    // immediately stop and report that.
+                    let intermediate_result = self.result();
+                    if intermediate_result != GameResult::InProgress {
+                        self.result = intermediate_result;
+                        self.player1_moves = !self.player1_moves;
+                        return Ok(());
+                    }
+
+                    let to_card = self.board.card_at_mut(to).unwrap();
+                    to_card.dice.push(die);
+                }
+
+                Fight(place) => {
+                    let battle_card = self.board.card_at_mut(place).unwrap();
+                    let die1 = battle_card.dice.pop().unwrap();
+                    let die2 = battle_card.dice.pop().unwrap();
+
+                    let (winner, loser) = Die::compare_dice(die1, die2);
+                    battle_card.dice.push(winner);
+
+                    if loser.belongs_to_player1() {
+                        self.player1.dice.push(loser);
+                    } else {
+                        self.player2.dice.push(loser);
+                    }
+                }
+
+                Surprise(from, to) => {
+                    let card = self.board.cards.remove(&from).unwrap();
+                    self.board.cards.insert(*to, card);
+                    self.board.refresh_adj_triples();
+                }
+
+                Submit => {
+                    if self.player1_moves {
+                        self.result = GameResult::SecondPlayerWon;
+                    } else {
+                        self.result = GameResult::FirstPlayerWon;
+                    }
+                }
+            };
+
+            self.result = self.result();
+            self.player1_moves = !self.player1_moves;
+
+            Ok(())
+        } else {
+            bail!("The move is invalid")
+        }
+    }
+
     fn result(&self) -> GameResult {
         // "Three in a Stack" condition.
         for card in self.board.cards_iter() {

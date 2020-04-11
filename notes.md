@@ -28,6 +28,7 @@ Write functions:
 - DONE to return neighbouring position for a given position
 - DONE to check victory conditions
 - DONE to generate all adjacent-triples for current board
+- DONE to apply moves to the game state
 - to generate possible moves
 
 # Provide a REPL for actually playing the game - first just between two human players.
