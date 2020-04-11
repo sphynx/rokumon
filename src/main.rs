@@ -76,6 +76,12 @@ impl fmt::Display for Card {
     }
 }
 
+impl Card {
+    fn main_die(&self) -> Option<&Die> {
+        self.dice.last()
+    }
+}
+
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 struct Coord {
     x: i8,
@@ -155,7 +161,7 @@ impl FromStr for UserCoord {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 enum Layout {
     Bricks,
     Square,
@@ -165,6 +171,7 @@ enum Layout {
 struct Board {
     layout: Layout,
     cards: HashMap<Coord, Card>,
+    adj_triples: Vec<(Coord, Coord, Coord)>,
 }
 
 impl Board {
@@ -212,10 +219,19 @@ impl Board {
 
         assert!(cards.len() == 7);
 
+        let layout = Layout::Bricks;
+        let adj_triples = Self::adjacent_triples(&layout, cards.keys());
+
         Board {
-            layout: Layout::Bricks,
+            layout,
             cards,
+            adj_triples,
         }
+    }
+
+    #[allow(dead_code)]
+    fn refresh_adj_triples(&mut self) {
+        self.adj_triples = Self::adjacent_triples(&self.layout, self.cards.keys());
     }
 
     fn top_row(&self) -> i8 {
@@ -238,6 +254,11 @@ impl Board {
     /// coordinate.
     fn row_cards_iter(&self, row: i8) -> impl Iterator<Item = &Card> {
         self.row_iter(row).map(|(_, card)| card)
+    }
+
+    /// Iterator over all cards in arbitrary order.
+    fn cards_iter(&self) -> impl Iterator<Item = &Card> {
+        self.cards.values()
     }
 
     /// Positions of cards from given `row` (`y` coordinate) ordered
@@ -277,6 +298,42 @@ impl Board {
         self.cards
             .keys()
             .filter(move |c| c.distance(&pos) == 1 && *c != &exclude)
+    }
+
+    fn are_three_adjacent(x: &Coord, y: &Coord, z: &Coord) -> bool {
+        let mut ones = 0;
+        if x.distance(y) == 1 {
+            ones += 1
+        }
+        if x.distance(z) == 1 {
+            ones += 1
+        }
+        if y.distance(z) == 1 {
+            ones += 1
+        }
+        ones > 1
+    }
+
+    fn are_three_in_line(layout: &Layout, a: &Coord, b: &Coord, c: &Coord) -> bool {
+        match layout {
+            Layout::Bricks => (a.x == b.x && b.x == c.x) || (a.y == b.y && b.y == c.y) || (a.z == b.z && b.z == c.z),
+            Layout::Square => (a.x == b.x && b.x == c.x) || (a.y == b.y && b.y == c.y),
+        }
+    }
+
+    #[allow(dead_code)]
+    fn adjacent_triples<'a>(layout: &Layout, coords: impl Iterator<Item = &'a Coord>) -> Vec<(Coord, Coord, Coord)> {
+        let mut result = vec![];
+
+        for tri in coords.combinations(3) {
+            let are_adj = Self::are_three_adjacent(tri[0], tri[1], tri[2]);
+            let are_in_line = Self::are_three_in_line(layout, tri[0], tri[1], tri[2]);
+            if are_adj && are_in_line {
+                result.push((*tri[0], *tri[1], *tri[2]));
+            }
+        }
+
+        result
     }
 }
 
@@ -338,6 +395,13 @@ impl fmt::Display for Player {
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+enum GameResult {
+    InProgress,
+    FirstPlayerWon,
+    SecondPlayerWon,
+}
+
 #[derive(Debug)]
 struct Game {
     board: Board,
@@ -346,6 +410,7 @@ struct Game {
     player1_moves: bool,
     player1_surprises: u8,
     player2_surprises: u8,
+    result: GameResult,
 }
 
 impl fmt::Display for Game {
@@ -371,6 +436,7 @@ impl Game {
             player1_moves: true,
             player1_surprises: 0,
             player2_surprises: 0,
+            result: GameResult::InProgress,
         }
     }
 
@@ -397,7 +463,7 @@ impl Game {
                 // 3. if card `to` has two dice they must be of current players' color
                 match (self.board.card_at(from), self.board.card_at(to)) {
                     (Some(card), Some(target_card)) => {
-                        let not_covered = card.dice.last().map(|d| *d == *die).unwrap_or(true);
+                        let not_covered = card.main_die().map(|d| *d == *die).unwrap_or(true);
                         let different_kind = card.kind != target_card.kind;
                         let covers_stack_ok = target_card.dice.len() < 2
                             || target_card
@@ -435,6 +501,42 @@ impl Game {
 
     #[allow(dead_code)]
     fn apply_move(&mut self, _mv: &GameMove) {}
+
+    #[allow(dead_code)]
+    fn result(&self) -> GameResult {
+        // "Three in a Stack" condition.
+        for card in self.board.cards_iter() {
+            if card.dice.len() > 2 {
+                if card.dice[0].belongs_to_player1() {
+                    return GameResult::FirstPlayerWon;
+                } else {
+                    return GameResult::SecondPlayerWon;
+                }
+            }
+        }
+
+        // "Three in a Row" condition.
+        for tri in self.board.adj_triples.iter() {
+            let die1 = self.board.card_at(&tri.0).and_then(|c| c.main_die());
+            let die2 = self.board.card_at(&tri.1).and_then(|c| c.main_die());
+            let die3 = self.board.card_at(&tri.2).and_then(|c| c.main_die());
+
+            match (die1, die2, die3) {
+                (Some(die1), Some(die2), Some(die3)) => {
+                    if die1.belongs_to_player1() && die2.belongs_to_player1() && die3.belongs_to_player1() {
+                        return GameResult::FirstPlayerWon;
+                    } else if !die1.belongs_to_player1() && !die2.belongs_to_player1() && !die3.belongs_to_player1() {
+                        return GameResult::SecondPlayerWon;
+                    } else {
+                        continue;
+                    }
+                }
+                _ => continue,
+            }
+        }
+
+        GameResult::InProgress
+    }
 }
 
 #[allow(dead_code)]

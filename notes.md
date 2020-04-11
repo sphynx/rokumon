@@ -26,9 +26,9 @@ I think we should use `nom` for that.
 Write functions:
 - DONE to check if a move is valid
 - DONE to return neighbouring position for a given position
-- to check victory conditions
+- DONE to check victory conditions
+- DONE to generate all adjacent-triples for current board
 - to generate possible moves
-- to generate all adjacent-triples for current board
 
 # Provide a REPL for actually playing the game - first just between two human players.
 
@@ -36,7 +36,9 @@ Write functions:
 
 This would allow to quickly experiment with different set of rules.
 
-# Implement a simple AI (based on alpha-beta pruning)
+# Implement Automa - an AI from the game rules used for solo play
+
+# Implement my own AI (based on alpha-beta pruning)
 
 `rubot` crate seems to be a good fit for the job:
 https://docs.rs/rubot/0.2.0/rubot/trait.Game.html
