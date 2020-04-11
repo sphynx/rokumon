@@ -24,15 +24,13 @@ I think we should use `nom` for that.
 # Implement actual game rules
 
 Write functions:
-- to check if a move is valid
-- to generate possible moves
+- DONE to check if a move is valid
+- DONE to return neighbouring position for a given position
 - to check victory conditions
+- to generate possible moves
 - to generate all adjacent-triples for current board
-- to return neighbouring position for a given position
 
 # Provide a REPL for actually playing the game - first just between two human players.
-
-# Write tests for rules/possible moves/etc.
 
 # Parametrize a game with particular instances of the rules, used cards and board layout
 
