@@ -137,13 +137,6 @@ impl Coord {
             bail!("Row is out of bounds: {}", user_coord.row);
         }
     }
-
-    fn distance(&self, other: &Coord) -> usize {
-        (self.x - other.x)
-            .abs()
-            .max((self.y - other.y).abs())
-            .max((self.z - other.z).abs()) as usize
-    }
 }
 
 /// More user-friendly coordinates easier to undertand and type. Row
@@ -178,14 +171,14 @@ impl FromStr for UserCoord {
 
 #[allow(dead_code)]
 #[derive(Copy, Clone, Debug)]
-enum Layout {
-    Bricks,
+enum Grid {
+    Hex,
     Square,
 }
 
 #[derive(Debug)]
 struct Board {
-    layout: Layout,
+    grid: Grid,
     cards: HashMap<Coord, Card>,
     adj_triples: Vec<(Coord, Coord, Coord)>,
 }
@@ -235,18 +228,18 @@ impl Board {
 
         assert!(cards.len() == 7);
 
-        let layout = Layout::Bricks;
-        let adj_triples = Self::adjacent_triples(&layout, cards.keys());
+        let grid = Grid::Hex;
+        let adj_triples = Self::adjacent_triples(&grid, cards.keys());
 
         Board {
-            layout,
+            grid,
             cards,
             adj_triples,
         }
     }
 
     fn refresh_adj_triples(&mut self) {
-        self.adj_triples = Self::adjacent_triples(&self.layout, self.cards.keys());
+        self.adj_triples = Self::adjacent_triples(&self.grid, self.cards.keys());
     }
 
     fn top_row(&self) -> i8 {
@@ -300,6 +293,7 @@ impl Board {
         self.cards.get(coord)
     }
 
+    /// A mutable references to a card at a particular coordinate.
     fn card_at_mut(&mut self, coord: &Coord) -> Option<&mut Card> {
         self.cards.get_mut(coord)
     }
@@ -309,42 +303,50 @@ impl Board {
     fn neighbours_iter_without(&self, pos: Coord, exclude: Coord) -> impl Iterator<Item = &Coord> {
         self.cards
             .keys()
-            .filter(move |c| c.distance(&pos) == 1 && *c != &exclude)
+            .filter(move |c| Self::distance(&self.grid, c, &pos) == 1 && *c != &exclude)
     }
 
-    fn are_three_adjacent(x: &Coord, y: &Coord, z: &Coord) -> bool {
+    fn are_three_adjacent(grid: &Grid, x: &Coord, y: &Coord, z: &Coord) -> bool {
         let mut ones = 0;
-        if x.distance(y) == 1 {
+        if Self::distance(grid, x, y) == 1 {
             ones += 1
         }
-        if x.distance(z) == 1 {
+        if Self::distance(grid, x, z) == 1 {
             ones += 1
         }
-        if y.distance(z) == 1 {
+        if Self::distance(grid, y, z) == 1 {
             ones += 1
         }
         ones > 1
     }
 
-    fn are_three_in_line(layout: &Layout, a: &Coord, b: &Coord, c: &Coord) -> bool {
-        match layout {
-            Layout::Bricks => (a.x == b.x && b.x == c.x) || (a.y == b.y && b.y == c.y) || (a.z == b.z && b.z == c.z),
-            Layout::Square => (a.x == b.x && b.x == c.x) || (a.y == b.y && b.y == c.y),
+    fn are_three_in_line(grid: &Grid, a: &Coord, b: &Coord, c: &Coord) -> bool {
+        match grid {
+            Grid::Hex => (a.x == b.x && b.x == c.x) || (a.y == b.y && b.y == c.y) || (a.z == b.z && b.z == c.z),
+            Grid::Square => (a.x == b.x && b.x == c.x) || (a.y == b.y && b.y == c.y),
         }
     }
 
-    fn adjacent_triples<'a>(layout: &Layout, coords: impl Iterator<Item = &'a Coord>) -> Vec<(Coord, Coord, Coord)> {
+    fn adjacent_triples<'a>(grid: &Grid, coords: impl Iterator<Item = &'a Coord>) -> Vec<(Coord, Coord, Coord)> {
         let mut result = vec![];
 
         for tri in coords.combinations(3) {
-            let are_adj = Self::are_three_adjacent(tri[0], tri[1], tri[2]);
-            let are_in_line = Self::are_three_in_line(layout, tri[0], tri[1], tri[2]);
+            let are_adj = Self::are_three_adjacent(grid, tri[0], tri[1], tri[2]);
+            let are_in_line = Self::are_three_in_line(grid, tri[0], tri[1], tri[2]);
             if are_adj && are_in_line {
                 result.push((*tri[0], *tri[1], *tri[2]));
             }
         }
 
         result
+    }
+
+    /// Manhattan's distance on hex and square grids.
+    fn distance(grid: &Grid, a: &Coord, b: &Coord) -> usize {
+        match grid {
+            Grid::Hex => (a.x - b.x).abs().max((a.y - b.y).abs()).max((a.z - b.z).abs()) as usize,
+            Grid::Square => ((a.x - b.x).abs() + (a.y - b.y).abs()) as usize,
+        }
     }
 }
 
@@ -576,6 +578,12 @@ impl Game {
                     let card = self.board.cards.remove(&from).unwrap();
                     self.board.cards.insert(*to, card);
                     self.board.refresh_adj_triples();
+
+                    if self.player1_moves {
+                        self.player1_surprises += 1;
+                    } else {
+                        self.player2_surprises += 1;
+                    }
                 }
 
                 Submit => {
