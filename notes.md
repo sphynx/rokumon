@@ -1,9 +1,3 @@
-# DONE Implement conversion between user coordinates and internal ones
-
-`R1C2` (i.e. row 1, card 2: rows counted starting from 1 from the top,
-cards counted starting from 1 from the left) and `<0, 0, 0>` (i.e.
-`Coord{ x: 0, y: 0, z: 0}` in the code).
-
 # Write a parser for moves
 
 Format can be something like this:
@@ -21,17 +15,19 @@ positions while repositioning a particular card.
 
 I think we should use `nom` for that.
 
-# Implement actual game rules
+# Implement move generator
 
-Write functions:
-- DONE to check if a move is valid
-- DONE to return neighbouring position for a given position
-- DONE to check victory conditions
-- DONE to generate all adjacent-triples for current board
-- DONE to apply moves to the game state
-- to generate possible moves
+I.e. to generate all possible moves from given position. This is
+useful for tests and required for the AI.
 
 # Provide a REPL for actually playing the game - first just between two human players.
+
+Perhaps we will need to have some better text UI for that. Not sure
+how to display the card position in text... ASCII graphics seems to be
+too much work. As the first approximation
+
+`rustyline` looks like a good way to do REPL:
+https://crates.io/crates/rustyline
 
 # Parametrize a game with particular instances of the rules, used cards and board layout
 
@@ -48,13 +44,6 @@ https://docs.rs/rubot/0.2.0/rubot/trait.Game.html
 
 If Web, we can potentially play with WebAssembly here.
 
-# DONE Figure out how to generate a new board using hex coordinates:
-
-https://www.redblobgames.com/grids/hexagons/
-https://www.redblobgames.com/grids/hexagons/implementation.html
-
-# DONE Implement Hash trait for Coord - just derive.
-
 # Figure out how to convert hex coord to brick-shaped rectangles
   (cards). We need back and forth translation.
 
@@ -62,3 +51,26 @@ https://www.redblobgames.com/grids/hexagons/implementation.html
 https://github.com/ggez/ggez/issues/587
 
 Looks complicated, perhaps it won't work at all with ggez :)
+
+# DONE Figure out how to generate a new board using hex coordinates:
+
+https://www.redblobgames.com/grids/hexagons/
+https://www.redblobgames.com/grids/hexagons/implementation.html
+
+# DONE Implement Hash trait for Coord - just derive.
+
+# DONE Implement conversion between user coordinates and internal ones
+
+`R1C2` (i.e. row 1, card 2: rows counted starting from 1 from the top,
+cards counted starting from 1 from the left) and `<0, 0, 0>` (i.e.
+`Coord{ x: 0, y: 0, z: 0}` in the code).
+
+# DONE Implement actual game rules
+
+Write functions:
+- to check if a move is valid
+- to return neighbouring position for a given position
+- to check victory conditions
+- to generate all adjacent-triples for current board
+- to apply moves to the game state
+
