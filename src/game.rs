@@ -230,8 +230,53 @@ pub struct Board {
 }
 
 impl Board {
+    #[allow(unused)]
+    pub fn empty() -> Self {
+        Self {
+            grid: Grid::Hex,
+            cards: HashMap::new(),
+            adj_triples: vec![],
+        }
+    }
+
+    /// Add 7 cards in a standard hex layout, first 3 cards for the
+    /// top row, then 4 cards for the bottom row.
+    pub fn with_seven_cards(seven_cards: [Card; 7]) -> Self {
+        let mut cards = HashMap::new();
+        let mut ix = 0;
+
+        // Put them on the board in right places. Coordinates are a
+        // little bit tricky, because they are essential hex
+        // coordinates. See here for more details:
+        // https://www.redblobgames.com/grids/hexagons/implementation.html#shape-triangle
+        // I use (0, 0, 0) coordinate for bottom-left position.
+
+        // Two rows: top row has y = -1, bottom row has y = 0.
+        for y in -1..=0 {
+            for x in -y..4 {
+                // 4 cards in the bottom row, 3 cards in the top row.
+                cards.insert(
+                    Coord::new_hex(x, y),
+                    seven_cards[ix].clone(),
+                );
+                ix += 1;
+            }
+        }
+
+        assert!(cards.len() == 7);
+
+        let grid = Grid::Hex;
+        let adj_triples = Self::adjacent_triples(&grid, cards.keys());
+
+        Self {
+            grid,
+            cards,
+            adj_triples,
+        }
+    }
+
     /// Starting position of Act 4.
-    pub fn starting_position() -> Board {
+    pub fn starting_position() -> Self {
         let jade = Card {
             kind: CardKind::Jade,
             dice: vec![],
@@ -242,7 +287,7 @@ impl Board {
         };
 
         // Init the deck with 4 Jades and 3 Gold cards.
-        let mut deck = vec![
+        let mut deck = [
             jade.clone(),
             jade.clone(),
             jade.clone(),
@@ -254,35 +299,9 @@ impl Board {
 
         // Shuffle.
         let mut rng = rand::thread_rng();
-        deck.as_mut_slice().shuffle(&mut rng);
+        &mut deck[..].shuffle(&mut rng);
 
-        // Put them on the board in right places. Coordinates are a
-        // little bit tricky, because they are essential hex
-        // coordinates. See here for more details:
-        // https://www.redblobgames.com/grids/hexagons/implementation.html#shape-triangle
-        // I use (0, 0, 0) coordinate for bottom-left position.
-        let mut cards = HashMap::new();
-        for y in -1..=0 {
-            // Two rows.
-            for x in -y..4 {
-                // 4 cards in the bottom row, 3 cards in the top row.
-                cards.insert(
-                    Coord { x, y, z: -x - y },
-                    deck.pop().expect("Deck should have enough cards for starting position"),
-                );
-            }
-        }
-
-        assert!(cards.len() == 7);
-
-        let grid = Grid::Hex;
-        let adj_triples = Self::adjacent_triples(&grid, cards.keys());
-
-        Board {
-            grid,
-            cards,
-            adj_triples,
-        }
+        Board::with_seven_cards(deck)
     }
 
     fn refresh_adj_triples(&mut self) {
