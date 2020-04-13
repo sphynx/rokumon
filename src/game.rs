@@ -149,7 +149,6 @@ impl Coord {
 
     /// Convert between user visible (row + card) and internal
     /// (hex/square) coordinates in presence of given board.
-    #[allow(unused)]
     fn from_user_coord(user_coord: &UserCoord, board: &Board) -> Fallible<Self> {
         if user_coord.row == 0 || user_coord.card == 0 {
             bail!("User coord numeration starts from 1");
@@ -356,6 +355,25 @@ impl Board {
         self.cards
             .keys()
             .filter(move |c| Self::distance(&self.grid, c, &pos) == 1 && *c != &exclude)
+    }
+
+    /// Convert coordinates in the GameMove (from user coordinates to
+    /// internal coordinates).
+    fn convert_move_coords(&self, m: &GameMove<UserCoord>) -> Fallible<GameMove<Coord>> {
+        fn go(board: &Board, game_move: &UserCoord) -> Fallible<Coord> {
+            Coord::from_user_coord(game_move, board)
+        }
+
+        // Sadly, there are no functors in Rust so we have to apply
+        // `from_user_coord` to "holes" in GameMove by hand.
+        use GameMove::*;
+        Ok(match m {
+            Place(d, uc) => Place(d.clone(), go(self, uc)?),
+            Move(d, uc_from, uc_to) => Move(d.clone(), go(self, uc_from)?, go(self, uc_to)?),
+            Fight(uc) => Fight(go(self, uc)?),
+            Surprise(uc_from, to) => Surprise(go(self, uc_from)?, *to),
+            Submit => Submit,
+        })
     }
 
     /// Checks if three positions are adjacent to each other.
@@ -603,6 +621,8 @@ impl Game {
                     // Add the die to the card.
                     let card = self.board.card_at_mut(coord).unwrap();
                     card.dice.push(die.clone());
+
+                    self.result = self.result();
                 }
 
                 Move(_die, from, to) => {
@@ -611,17 +631,17 @@ impl Game {
 
                     // Here, we should check for victory condition
                     // immediately while the die is in flight. If it
-                    // leads to the win for the other player, we
-                    // immediately stop and report that.
+                    // leads to the win for the other player, we do
+                    // not continue with the rest of the move.
                     let intermediate_result = self.result();
                     if intermediate_result != GameResult::InProgress {
                         self.result = intermediate_result;
-                        self.player1_moves = !self.player1_moves;
-                        return Ok(());
-                    }
+                    } else {
+                        let to_card = self.board.card_at_mut(to).unwrap();
+                        to_card.dice.push(die);
 
-                    let to_card = self.board.card_at_mut(to).unwrap();
-                    to_card.dice.push(die);
+                        self.result = self.result();
+                    }
                 }
 
                 Fight(place) => {
@@ -637,6 +657,8 @@ impl Game {
                     } else {
                         self.player2.dice.push(loser);
                     }
+
+                    self.result = self.result();
                 }
 
                 Surprise(from, to) => {
@@ -649,6 +671,8 @@ impl Game {
                     } else {
                         self.player2_surprises += 1;
                     }
+
+                    self.result = self.result();
                 }
 
                 Submit => {
@@ -660,12 +684,11 @@ impl Game {
                 }
             };
 
-            self.result = self.result();
             self.player1_moves = !self.player1_moves;
 
             Ok(())
         } else {
-            bail!("The move is invalid")
+            bail!("The move is invalid in current position: {:?}", game_move)
         }
     }
 
@@ -705,6 +728,13 @@ impl Game {
         }
 
         GameResult::InProgress
+    }
+
+    #[allow(unused)]
+    pub fn apply_move_str(&mut self, move_str: &str) -> Fallible<()> {
+        let user_move = move_str.parse()?;
+        let converted_move = self.board.convert_move_coords(&user_move)?;
+        self.apply_move(&converted_move)
     }
 }
 
@@ -898,5 +928,20 @@ mod test {
 
         // Can't start from empty spot.
         assert!(!game.is_valid_move(&Surprise(c(3, 3), c(0, 1))));
+    }
+
+    #[test]
+    fn test_apply_move() -> Fallible<()> {
+        let mut game = Game::new();
+        assert_eq!(game.result, GameResult::InProgress);
+        game.apply_move_str("submit")?;
+        assert_eq!(game.result, GameResult::SecondPlayerWon);
+
+        let mut game = Game::new();
+        game.apply_move_str("place r2 at r1c1")?;
+        game.apply_move_str("submit")?;
+        assert_eq!(game.result, GameResult::FirstPlayerWon);
+
+        Ok(())
     }
 }
