@@ -1044,11 +1044,13 @@ mod test {
     fn test_apply_move() -> Fallible<()> {
         let c = Coord::new_hex;
 
+        // Submit leads to loss.
         let mut game = Game::new();
         assert_eq!(game.result, GameResult::InProgress);
         game.apply_move_str("submit")?;
         assert_eq!(game.result, GameResult::SecondPlayerWon);
 
+        // Submit leads to loss #2.
         let mut game = Game::new();
         game.apply_move_str("place r2 at r1c1")?;
         game.apply_move_str("submit")?;
@@ -1056,6 +1058,7 @@ mod test {
 
         let deck = standard_deck();
 
+        // Fight reduces number of dice on cards.
         let mut game = Game::custom(deck.clone());
         game.apply_move_str("place r2 at r1c1")?;
         game.apply_move_str("place b1 at r2c1")?;
@@ -1065,6 +1068,8 @@ mod test {
         assert_eq!(card.dice.len(), 1);
         assert_eq!(card.dice[0].value, 2);
 
+        // Fight reduces number of dice on cards.
+        // White 1 beats red 6.
         let mut game = Game::custom(deck.clone());
         game.apply_move_str("place r6 at r1c1")?;
         game.apply_move_str("place w1 at r2c1")?;
@@ -1074,6 +1079,7 @@ mod test {
         assert_eq!(card.dice.len(), 1);
         assert_eq!(card.dice[0].value, 1);
 
+        // Simplest 3-in-a-row win.
         let mut game = Game::custom(deck.clone());
         game.apply_move_str("place r6 at r1c1")?;
         game.apply_move_str("place w1 at r2c1")?;
@@ -1082,6 +1088,7 @@ mod test {
         game.apply_move_str("place r2 at r1c3")?;
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
+        // 3-in-a-row doesn't count if it's adjacent.
         let mut game = Game::custom(deck.clone());
         game.apply_move_str("place r6 at r2c1")?;
         game.apply_move_str("place w1 at r1c1")?;
@@ -1090,6 +1097,7 @@ mod test {
         game.apply_move_str("place r2 at r2c4")?;
         assert_eq!(game.result, GameResult::InProgress);
 
+        // 3-in-a-row for newly built line.
         let mut game = Game::custom(deck.clone());
         game.apply_move_str("place r6 at r1c1")?;
         game.apply_move_str("place w1 at r2c2")?;
@@ -1098,6 +1106,7 @@ mod test {
         game.apply_move_str("place r2 at r1c1")?;
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
+        // Uncovering a die with 3-in-a-row leads to win.
         let mut game = Game::custom(deck.clone());
         game.apply_move_str("place r6 at r2c1")?;
         game.apply_move_str("place w1 at r1c1")?;
@@ -1106,6 +1115,62 @@ mod test {
         game.apply_move_str("place r2 at r2c3")?;
         assert_eq!(game.result, GameResult::InProgress);
         game.apply_move_str("move w1 from r2c2 to r1c1")?;
+        assert_eq!(game.result, GameResult::FirstPlayerWon);
+
+        // No move between the same card kinds is allowed.
+        let mut game = Game::custom(deck.clone());
+        game.apply_move_str("place r6 at r2c1")?;
+        game.apply_move_str("place w1 at r1c1")?;
+        assert!(game.apply_move_str("move r6 from r2c1 to r2c2").is_err());
+
+        // Simplest 3-in-a-stack win.
+        let mut game = Game::custom(deck.clone());
+        game.apply_move_str("place r6 at r2c1")?;
+        game.apply_move_str("place w1 at r2c2")?;
+        game.apply_move_str("place r4 at r1c1")?;
+        game.apply_move_str("place b1 at r1c2")?;
+        game.apply_move_str("move r4 from r1c1 to r2c1")?;
+        game.apply_move_str("move b1 from r1c2 to r2c2")?;
+        game.apply_move_str("place r2 at r1c1")?;
+        game.apply_move_str("place b3 at r1c2")?;
+        assert_eq!(game.result, GameResult::InProgress);
+        game.apply_move_str("move r2 from r1c1 to r2c1")?;
+        assert_eq!(game.result, GameResult::FirstPlayerWon);
+
+        // Simultaneous 3-in-a-row for both players.
+        // (plus a stack and actually 4-in-a-row)
+        let jade = Card {
+            kind: CardKind::Jade,
+            dice: vec![],
+        };
+
+        let gold = Card {
+            kind: CardKind::Gold,
+            dice: vec![],
+        };
+
+        let deck = [
+            gold.clone(),
+            gold.clone(),
+            gold.clone(),
+            jade.clone(),
+            jade.clone(),
+            jade.clone(),
+            gold.clone(),
+        ];
+
+        let mut game = Game::custom(deck.clone());
+        game.apply_move_str("place r2 at r2c1")?;
+        game.apply_move_str("place b1 at r1c1")?;
+        game.apply_move_str("place r2 at r2c2")?;
+        game.apply_move_str("move b1 from r1c1 to r2c2")?;
+        game.apply_move_str("place r4 at r2c3")?;
+        game.apply_move_str("place b3 at r1c3")?;
+        game.apply_move_str("place r6 at r2c4")?;
+        game.apply_move_str("place b3 at r1c1")?;
+        game.apply_move_str("move r6 from r2c4 to r2c3")?;
+        assert_eq!(game.result, GameResult::InProgress);
+        game.apply_move_str("move b1 from r2c2 to r1c2")?;
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         Ok(())
