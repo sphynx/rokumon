@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
 
-use failure::{bail, format_err, Fallible};
+use failure::{bail, ensure, format_err, Fallible};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
 
@@ -255,10 +255,7 @@ impl Board {
         for y in -1..=0 {
             for x in -y..4 {
                 // 4 cards in the bottom row, 3 cards in the top row.
-                cards.insert(
-                    Coord::new_hex(x, y),
-                    seven_cards[ix].clone(),
-                );
+                cards.insert(Coord::new_hex(x, y), seven_cards[ix].clone());
                 ix += 1;
             }
         }
@@ -553,6 +550,22 @@ impl Game {
         }
     }
 
+    /// Create a custom game with predefined set of seven cards.
+    /// Layout is standard. First 3 cards go into top row, next 4 go
+    /// into the bottom row.
+    #[allow(unused)]
+    pub fn custom(cards: [Card; 7]) -> Self {
+        Game {
+            board: Board::with_seven_cards(cards),
+            player1: Player::first(),
+            player2: Player::second(),
+            player1_moves: true,
+            player1_surprises: 0,
+            player2_surprises: 0,
+            result: GameResult::InProgress,
+        }
+    }
+
     fn current_player(&self) -> &Player {
         if self.player1_moves {
             &self.player1
@@ -569,14 +582,25 @@ impl Game {
         }
     }
 
-    /// Checks if a given move is valid in this particular game state.
-    fn is_valid_move(&self, game_move: &GameMove<Coord>) -> bool {
+    /// Validates a given move in this particular game state, gives an
+    /// explanation if not valid, otherwise returns ().
+    fn validate_move(&self, game_move: &GameMove<Coord>) -> Fallible<()> {
         use GameMove::*;
         match game_move {
             Place(die, coord) => {
-                let player_has_die = self.current_player().dice.contains(die);
-                let target_card_is_empty = self.board.has_empty_card_at(coord);
-                player_has_die && target_card_is_empty
+                ensure!(
+                    self.current_player().dice.contains(die),
+                    "place: player doesn't have this die: {}",
+                    die
+                );
+
+                ensure!(
+                    self.board.has_empty_card_at(coord),
+                    "place: target card should be empty: {}",
+                    coord
+                );
+
+                Ok(())
             }
             Move(die, from, to) => {
                 // 1. the `die` is on the card `from` and is not covered.
@@ -585,38 +609,76 @@ impl Game {
                 match (self.board.card_at(from), self.board.card_at(to)) {
                     (Some(card), Some(target_card)) => {
                         let not_covered = card.main_die().map(|d| *d == *die).unwrap_or(true);
-                        let different_kind = card.kind != target_card.kind;
+                        ensure!(not_covered, "move: the dice to be moved should not be covered");
+
+                        ensure!(
+                            card.kind != target_card.kind,
+                            "move: `from` and `to` cards should be of different kinds, but they are both {:?}",
+                            card.kind
+                        );
+
                         let covers_stack_ok = target_card.dice.len() < 2
                             || target_card
                                 .dice
                                 .iter()
                                 .all(|d| d.belongs_to_player1() == self.player1_moves);
+                        ensure!(covers_stack_ok, "move: can only cover one die or two of your own dice");
 
-                        not_covered && different_kind && covers_stack_ok
+                        Ok(())
                     }
-                    _ => false,
+                    _ => bail!("move: there should be cards at both `from` and `to` locations"),
                 }
             }
             Fight(coord) => match self.board.card_at(coord) {
                 Some(card) => {
-                    let has_two_dice = card.dice.len() == 2;
+                    let num_of_dice = card.dice.len();
+                    ensure!(
+                        num_of_dice == 2,
+                        "fight: can only fight at a card with two dice, but have: {}",
+                        num_of_dice
+                    );
+
                     let at_least_one_yours = card.dice.iter().any(|d| d.belongs_to_player1() == self.player1_moves);
-                    has_two_dice && at_least_one_yours
+                    ensure!(at_least_one_yours, "fight: at least once die should be yours");
+
+                    Ok(())
                 }
-                _ => false,
+                _ => bail!("fight: there should be a card at: {}", coord),
             },
             Surprise(from, to) => {
-                let has_card_at_from = self.board.card_at(from).is_some();
-                let is_empty_at_to = self.board.card_at(to).is_none();
-                let to_has_enough_neighbours = self.board.neighbours_iter_without(*to, *from).count() >= 2;
-                let not_too_many_surprises = if self.player1_moves {
+                ensure!(
+                    self.board.card_at(from).is_some(),
+                    "surprise: should have a card at: {}",
+                    from
+                );
+
+                ensure!(
+                    self.board.card_at(to).is_none(),
+                    "surprise: should be empty position at: {}",
+                    to
+                );
+
+                let neighbours = self.board.neighbours_iter_without(*to, *from).count();
+                ensure!(
+                    neighbours >= 2,
+                    "surprise: new position for the card should have enough neighbours, has: {}",
+                    neighbours
+                );
+
+                let number_of_surprises = if self.player1_moves {
                     self.player1_surprises
                 } else {
                     self.player2_surprises
-                } == 0;
-                has_card_at_from && is_empty_at_to && to_has_enough_neighbours && not_too_many_surprises
+                };
+                ensure!(
+                    number_of_surprises < 1,
+                    "surprise: player shouldn't use too many surprises, used: {}",
+                    number_of_surprises
+                );
+
+                Ok(())
             }
-            Submit => true,
+            Submit => Ok(()),
         }
     }
 
@@ -625,90 +687,88 @@ impl Game {
     fn apply_move(&mut self, game_move: &GameMove<Coord>) -> Fallible<()> {
         use GameMove::*;
 
-        if self.is_valid_move(game_move) {
-            // Here we consider all moves validated, so we use unwrap
-            // freely, even though there might be still be failures
-            // due to programming errors.
-            match game_move {
-                Place(die, coord) => {
-                    let player = self.current_player_mut();
+        self.validate_move(game_move)?;
 
-                    // Remove the die from player's stock.
-                    let die_ix = player.dice.iter().position(|d| d == die).unwrap();
-                    player.dice.remove(die_ix);
+        // Here we consider all moves validated, so we use unwrap
+        // freely, even though there might be still be failures
+        // due to programming errors.
+        match game_move {
+            Place(die, coord) => {
+                let player = self.current_player_mut();
 
-                    // Add the die to the card.
-                    let card = self.board.card_at_mut(coord).unwrap();
-                    card.dice.push(die.clone());
+                // Remove the die from player's stock.
+                let die_ix = player.dice.iter().position(|d| d == die).unwrap();
+                player.dice.remove(die_ix);
 
-                    self.result = self.result();
-                }
+                // Add the die to the card.
+                let card = self.board.card_at_mut(coord).unwrap();
+                card.dice.push(die.clone());
 
-                Move(_die, from, to) => {
-                    let from_card = self.board.card_at_mut(from).unwrap();
-                    let die = from_card.dice.pop().unwrap();
+                self.result = self.result();
+            }
 
-                    // Here, we should check for victory condition
-                    // immediately while the die is in flight. If it
-                    // leads to the win for the other player, we do
-                    // not continue with the rest of the move.
-                    let intermediate_result = self.result();
-                    if intermediate_result != GameResult::InProgress {
-                        self.result = intermediate_result;
-                    } else {
-                        let to_card = self.board.card_at_mut(to).unwrap();
-                        to_card.dice.push(die);
+            Move(_die, from, to) => {
+                let from_card = self.board.card_at_mut(from).unwrap();
+                let die = from_card.dice.pop().unwrap();
 
-                        self.result = self.result();
-                    }
-                }
-
-                Fight(place) => {
-                    let battle_card = self.board.card_at_mut(place).unwrap();
-                    let die1 = battle_card.dice.pop().unwrap();
-                    let die2 = battle_card.dice.pop().unwrap();
-
-                    let (winner, loser) = Die::compare_dice(die1, die2);
-                    battle_card.dice.push(winner);
-
-                    if loser.belongs_to_player1() {
-                        self.player1.dice.push(loser);
-                    } else {
-                        self.player2.dice.push(loser);
-                    }
+                // Here, we should check for victory condition
+                // immediately while the die is in flight. If it
+                // leads to the win for the other player, we do
+                // not continue with the rest of the move.
+                let intermediate_result = self.result();
+                if intermediate_result != GameResult::InProgress {
+                    self.result = intermediate_result;
+                } else {
+                    let to_card = self.board.card_at_mut(to).unwrap();
+                    to_card.dice.push(die);
 
                     self.result = self.result();
                 }
+            }
 
-                Surprise(from, to) => {
-                    let card = self.board.cards.remove(&from).unwrap();
-                    self.board.cards.insert(*to, card);
-                    self.board.refresh_adj_triples();
+            Fight(place) => {
+                let battle_card = self.board.card_at_mut(place).unwrap();
+                let die1 = battle_card.dice.pop().unwrap();
+                let die2 = battle_card.dice.pop().unwrap();
 
-                    if self.player1_moves {
-                        self.player1_surprises += 1;
-                    } else {
-                        self.player2_surprises += 1;
-                    }
+                let (winner, loser) = Die::compare_dice(die1, die2);
+                battle_card.dice.push(winner);
 
-                    self.result = self.result();
+                if loser.belongs_to_player1() {
+                    self.player1.dice.push(loser);
+                } else {
+                    self.player2.dice.push(loser);
                 }
 
-                Submit => {
-                    if self.player1_moves {
-                        self.result = GameResult::SecondPlayerWon;
-                    } else {
-                        self.result = GameResult::FirstPlayerWon;
-                    }
+                self.result = self.result();
+            }
+
+            Surprise(from, to) => {
+                let card = self.board.cards.remove(&from).unwrap();
+                self.board.cards.insert(*to, card);
+                self.board.refresh_adj_triples();
+
+                if self.player1_moves {
+                    self.player1_surprises += 1;
+                } else {
+                    self.player2_surprises += 1;
                 }
-            };
 
-            self.player1_moves = !self.player1_moves;
+                self.result = self.result();
+            }
 
-            Ok(())
-        } else {
-            bail!("The move is invalid in current position: {:?}", game_move)
-        }
+            Submit => {
+                if self.player1_moves {
+                    self.result = GameResult::SecondPlayerWon;
+                } else {
+                    self.result = GameResult::FirstPlayerWon;
+                }
+            }
+        };
+
+        self.player1_moves = !self.player1_moves;
+
+        Ok(())
     }
 
     /// Caclulates the game result of a particular game state by
@@ -866,7 +926,7 @@ mod test {
     }
 
     #[test]
-    fn test_validity_of_place() {
+    fn test_validity_of_place() -> Fallible<()> {
         // TODO: this test is somewhat limited since now we are only
         // testing moves valid in the starting position. Extend it
         // when we have `apply_move` (test placing on non-empty
@@ -880,22 +940,24 @@ mod test {
         let c = Coord::new_hex;
 
         // Positive test cases.
-        assert!(game.is_valid_move(&Place(d(Red, 2), c(0, 0))));
-        assert!(game.is_valid_move(&Place(d(Red, 4), c(0, 0))));
-        assert!(game.is_valid_move(&Place(d(Red, 6), c(0, 0))));
-        assert!(game.is_valid_move(&Place(d(Red, 6), c(1, 0))));
-        assert!(game.is_valid_move(&Place(d(Red, 6), c(2, -1))));
+        game.validate_move(&Place(d(Red, 2), c(0, 0)))?;
+        game.validate_move(&Place(d(Red, 4), c(0, 0)))?;
+        game.validate_move(&Place(d(Red, 6), c(0, 0)))?;
+        game.validate_move(&Place(d(Red, 6), c(1, 0)))?;
+        game.validate_move(&Place(d(Red, 6), c(2, -1)))?;
 
         // No dice like this in Player 1's stock.
-        assert!(!game.is_valid_move(&Place(d(Red, 5), c(0, 0))));
-        assert!(!game.is_valid_move(&Place(d(Black, 1), c(0, 0))));
+        assert!(game.validate_move(&Place(d(Red, 5), c(0, 0))).is_err());
+        assert!(game.validate_move(&Place(d(Black, 1), c(0, 0))).is_err());
 
         // No card there.
-        assert!(!game.is_valid_move(&Place(d(Red, 6), c(-1, 0))));
+        assert!(game.validate_move(&Place(d(Red, 6), c(-1, 0))).is_err());
+
+        Ok(())
     }
 
     #[test]
-    fn test_validity_of_surprise() {
+    fn test_validity_of_surprise() -> Fallible<()> {
         // TODO: this test is somewhat limited since now we are only
         // testing moves valid in the starting position. Extend it
         // when we have `apply_move`: test surprising twice or
@@ -907,50 +969,81 @@ mod test {
         let c = Coord::new_hex;
 
         // Positive test cases.
-        assert!(game.is_valid_move(&Surprise(c(0, 0), c(1, 1))));
-        assert!(game.is_valid_move(&Surprise(c(0, 0), c(2, 1))));
-        assert!(game.is_valid_move(&Surprise(c(0, 0), c(2, -2))));
-        assert!(game.is_valid_move(&Surprise(c(0, 0), c(4, -1))));
-        assert!(game.is_valid_move(&Surprise(c(0, 0), c(3, -2))));
+        game.validate_move(&Surprise(c(0, 0), c(1, 1)))?;
+        game.validate_move(&Surprise(c(0, 0), c(2, 1)))?;
+        game.validate_move(&Surprise(c(0, 0), c(2, -2)))?;
+        game.validate_move(&Surprise(c(0, 0), c(4, -1)))?;
+        game.validate_move(&Surprise(c(0, 0), c(3, -2)))?;
 
-        assert!(game.is_valid_move(&Surprise(c(1, 0), c(0, -1))));
-        assert!(game.is_valid_move(&Surprise(c(1, 0), c(2, 1))));
-        assert!(game.is_valid_move(&Surprise(c(1, 0), c(2, -2))));
-        assert!(game.is_valid_move(&Surprise(c(1, 0), c(4, -1))));
-        assert!(game.is_valid_move(&Surprise(c(1, 0), c(3, -2))));
+        game.validate_move(&Surprise(c(1, 0), c(0, -1)))?;
+        game.validate_move(&Surprise(c(1, 0), c(2, 1)))?;
+        game.validate_move(&Surprise(c(1, 0), c(2, -2)))?;
+        game.validate_move(&Surprise(c(1, 0), c(4, -1)))?;
+        game.validate_move(&Surprise(c(1, 0), c(3, -2)))?;
 
-        assert!(game.is_valid_move(&Surprise(c(1, -1), c(0, 1))));
-        assert!(game.is_valid_move(&Surprise(c(1, -1), c(1, 1))));
-        assert!(game.is_valid_move(&Surprise(c(1, -1), c(2, 1))));
-        assert!(game.is_valid_move(&Surprise(c(1, -1), c(4, -1))));
-        assert!(game.is_valid_move(&Surprise(c(1, -1), c(3, -2))));
+        game.validate_move(&Surprise(c(1, -1), c(0, 1)))?;
+        game.validate_move(&Surprise(c(1, -1), c(1, 1)))?;
+        game.validate_move(&Surprise(c(1, -1), c(2, 1)))?;
+        game.validate_move(&Surprise(c(1, -1), c(4, -1)))?;
+        game.validate_move(&Surprise(c(1, -1), c(3, -2)))?;
 
-        assert!(game.is_valid_move(&Surprise(c(2, -1), c(0, -1))));
-        assert!(game.is_valid_move(&Surprise(c(2, -1), c(0, 1))));
-        assert!(game.is_valid_move(&Surprise(c(2, -1), c(1, 1))));
-        assert!(game.is_valid_move(&Surprise(c(2, -1), c(2, 1))));
-        assert!(game.is_valid_move(&Surprise(c(2, -1), c(4, -1))));
+        game.validate_move(&Surprise(c(2, -1), c(0, -1)))?;
+        game.validate_move(&Surprise(c(2, -1), c(0, 1)))?;
+        game.validate_move(&Surprise(c(2, -1), c(1, 1)))?;
+        game.validate_move(&Surprise(c(2, -1), c(2, 1)))?;
+        game.validate_move(&Surprise(c(2, -1), c(4, -1)))?;
 
         // Can't reposition to the same spot.
-        assert!(!game.is_valid_move(&Surprise(c(0, 0), c(0, 0))));
-        assert!(!game.is_valid_move(&Surprise(c(1, 0), c(1, 0))));
+        assert!(game.validate_move(&Surprise(c(0, 0), c(0, 0))).is_err());
+        assert!(game.validate_move(&Surprise(c(1, 0), c(1, 0))).is_err());
 
         // Not enough neighbours.
-        assert!(!game.is_valid_move(&Surprise(c(0, 0), c(0, 1))));
-        assert!(!game.is_valid_move(&Surprise(c(0, 0), c(0, -1))));
-        assert!(!game.is_valid_move(&Surprise(c(1, 0), c(1, 1))));
-        assert!(!game.is_valid_move(&Surprise(c(1, 0), c(0, 1))));
-        assert!(!game.is_valid_move(&Surprise(c(1, -1), c(0, -1))));
-        assert!(!game.is_valid_move(&Surprise(c(1, -1), c(2, -2))));
-        assert!(!game.is_valid_move(&Surprise(c(2, -1), c(3, -2))));
-        assert!(!game.is_valid_move(&Surprise(c(2, -1), c(2, -2))));
+        assert!(game.validate_move(&Surprise(c(0, 0), c(0, 1))).is_err());
+        assert!(game.validate_move(&Surprise(c(0, 0), c(0, -1))).is_err());
+        assert!(game.validate_move(&Surprise(c(1, 0), c(1, 1))).is_err());
+        assert!(game.validate_move(&Surprise(c(1, 0), c(0, 1))).is_err());
+        assert!(game.validate_move(&Surprise(c(1, -1), c(0, -1))).is_err());
+        assert!(game.validate_move(&Surprise(c(1, -1), c(2, -2))).is_err());
+        assert!(game.validate_move(&Surprise(c(2, -1), c(3, -2))).is_err());
+        assert!(game.validate_move(&Surprise(c(2, -1), c(2, -2))).is_err());
 
         // Can't start from empty spot.
-        assert!(!game.is_valid_move(&Surprise(c(3, 3), c(0, 1))));
+        assert!(game.validate_move(&Surprise(c(3, 3), c(0, 1))).is_err());
+
+        Ok(())
+    }
+
+    /// Layout is as follows:
+    /// ```
+    ///  G G G
+    /// J J J J
+    /// ```
+    fn standard_deck() -> [Card; 7] {
+        let jade = Card {
+            kind: CardKind::Jade,
+            dice: vec![],
+        };
+
+        let gold = Card {
+            kind: CardKind::Gold,
+            dice: vec![],
+        };
+
+        [
+            gold.clone(),
+            gold.clone(),
+            gold.clone(),
+            jade.clone(),
+            jade.clone(),
+            jade.clone(),
+            jade.clone(),
+        ]
     }
 
     #[test]
     fn test_apply_move() -> Fallible<()> {
+        let c = Coord::new_hex;
+
         let mut game = Game::new();
         assert_eq!(game.result, GameResult::InProgress);
         game.apply_move_str("submit")?;
@@ -960,6 +1053,17 @@ mod test {
         game.apply_move_str("place r2 at r1c1")?;
         game.apply_move_str("submit")?;
         assert_eq!(game.result, GameResult::FirstPlayerWon);
+
+
+        let deck = standard_deck();
+        let mut game = Game::custom(deck.clone());
+        game.apply_move_str("place r2 at r1c1")?;
+        game.apply_move_str("place b1 at r2c1")?;
+        game.apply_move_str("move r2 from r1c1 to r2c1")?;
+        game.apply_move_str("fight at r2c1")?;
+        let card = game.board.card_at(&c(0, 0)).unwrap();
+        assert_eq!(card.dice.len(), 1);
+        assert_eq!(card.dice[0].value, 2);
 
         Ok(())
     }
