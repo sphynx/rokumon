@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::str::FromStr;
 
@@ -9,7 +9,7 @@ use rand::seq::SliceRandom;
 use crate::parsers;
 
 /// Possible colors of dice.
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
 pub enum DiceColor {
     Red,
     Black,
@@ -27,7 +27,7 @@ pub enum CardKind {
 
 /// A die in the game. Has a color and value. It's a normal cube die,
 /// so values are from 1 to 6.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct Die {
     color: DiceColor,
     value: u8,
@@ -349,6 +349,11 @@ impl Board {
             .sorted_by_key(|(coord, _)| coord.x)
     }
 
+    /// Iterator over positions/cards with no dice on them.
+    fn empty_cards_iter(&self) -> impl Iterator<Item = (&Coord, &Card)> {
+        self.cards.iter().filter(|(_, card)| card.dice.is_empty())
+    }
+
     /// Check is the position has a card and it's empty. Note that "no
     /// card" is different to "empty card".
     fn has_empty_card_at(&self, coord: &Coord) -> bool {
@@ -363,6 +368,18 @@ impl Board {
     /// A mutable references to a card at a particular coordinate.
     fn card_at_mut(&mut self, coord: &Coord) -> Option<&mut Card> {
         self.cards.get_mut(coord)
+    }
+
+    fn active_dice_iter(&self, player1_moves: bool) -> impl Iterator<Item = (&Coord, &Die)> {
+        self.cards.iter().filter_map(move |(coord, card)| {
+            card.dice.last().and_then(move |d| {
+                if d.belongs_to_player1() == player1_moves {
+                    Some((coord, d))
+                } else {
+                    None
+                }
+            })
+        })
     }
 
     /// Iterator over neighbouring (immediately adjacent) cards for a
@@ -416,6 +433,8 @@ impl Board {
         }
     }
 
+    /// Calculate all possible adjacent triples in a single line.
+    // TODO: add a test for this (for both grids).
     fn adjacent_triples<'a>(grid: &Grid, coords: impl Iterator<Item = &'a Coord>) -> Vec<(Coord, Coord, Coord)> {
         let mut result = vec![];
 
@@ -815,12 +834,37 @@ impl Game {
         let converted_move = self.board.convert_move_coords(&user_move)?;
         self.apply_move(&converted_move)
     }
+
+    #[allow(unused)]
+    fn generate_moves(&self) -> Vec<GameMove<Coord>> {
+        let mut moves: HashSet<GameMove<Coord>> = HashSet::new();
+
+        let stock = &self.current_player().dice;
+        for (&coord, _card) in self.board.empty_cards_iter() {
+            for d in stock {
+                moves.insert(GameMove::Place(d.clone(), coord));
+            }
+        }
+
+        let active_dice = self.board.active_dice_iter(self.player1_moves);
+        let all_positions: Vec<_> = self.board.cards.keys().collect();
+        for (from, die) in active_dice {
+            for to in &all_positions {
+                let candidate = GameMove::Move(die.clone(), *from, **to);
+                if self.validate_move(&candidate).is_ok() {
+                    moves.insert(candidate);
+                }
+            }
+        }
+
+        moves.into_iter().collect()
+    }
 }
 
 /// Representation of a possible game move. Parametrised by a type of
 /// coordinates used (user coordinates or internal ones).
 #[allow(unused)]
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum GameMove<C> {
     Place(Die, C),
     Move(Die, C, C),
