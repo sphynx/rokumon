@@ -10,12 +10,14 @@
 /// - submit
 use crate::game::*;
 
+use failure::{bail, Fallible};
+
 use std::convert::TryFrom;
 
 use nom::branch::alt;
 use nom::bytes::complete::tag_no_case;
 use nom::character::complete::{char, digit1, one_of, space0, space1};
-use nom::combinator::{map, map_opt, map_res, value};
+use nom::combinator::{all_consuming, map, map_opt, map_res, value};
 use nom::sequence::{delimited, pair, terminated, tuple};
 use nom::IResult;
 use nom::{do_parse, tag_no_case};
@@ -70,7 +72,7 @@ fn coord(i: &str) -> IResult<&str, Coord> {
             tuple((signed, coord_sep, signed, coord_sep, signed)),
             char('>'),
         ),
-        |(x, _, y, _, z)| Coord::new(x, y, z),
+        |(x, _, y, _, _)| Coord::new_hex(x, y),
     )(i)
 }
 
@@ -133,9 +135,15 @@ fn submit_cmd(i: &str) -> IResult<&str, GameMove<UserCoord>> {
     value(GameMove::Submit, tag_no_case("submit"))(i)
 }
 
-#[allow(dead_code)]
-pub fn game_move(i: &str) -> IResult<&str, GameMove<UserCoord>> {
-    alt((place_cmd, move_cmd, fight_cmd, surprise_cmd, submit_cmd))(i)
+fn game_move(i: &str) -> IResult<&str, GameMove<UserCoord>> {
+    all_consuming(alt((place_cmd, move_cmd, fight_cmd, surprise_cmd, submit_cmd)))(i)
+}
+
+pub fn parse_move(s: &str) -> Fallible<GameMove<UserCoord>> {
+    match game_move(s) {
+        Ok((_, res)) => return Ok(res),
+        Err(_) => bail!("Failed to parse move from '{}'", s),
+    }
 }
 
 #[cfg(test)]
@@ -197,15 +205,15 @@ mod test {
         use GameMove::*;
 
         let d = Die::new;
-        let c = Coord::new;
+        let c = Coord::new_hex;
         let uc = UserCoord::new;
 
         test!(game_move("place R3 at R1C2") => Place(d(Red, 3), uc(1, 2)));
         test!(game_move("move W1 from R1C1 to R2C2") => Move(d(White, 1), uc(1, 1), uc(2, 2)));
         test!(game_move("fight at R2C1") => Fight(uc(2, 1)));
         test!(game_move("fight at r1c3") => Fight(uc(1, 3)));
-        test!(game_move("surprise from R2C2 to <0, 1, -1>") => Surprise(uc(2, 2), c(0, 1, -1)));
-        test!(game_move("surprise FROM R1C2 TO <0,1, -1>") => Surprise(uc(1, 2), c(0, 1, -1)));
+        test!(game_move("surprise from R2C2 to <0, 1, -1>") => Surprise(uc(2, 2), c(0, 1)));
+        test!(game_move("surprise FROM R1C2 TO <0,1, -1>") => Surprise(uc(1, 2), c(0, 1)));
         test!(game_move("submit") => Submit);
         test!(game_move("SUBMIT") => Submit);
 

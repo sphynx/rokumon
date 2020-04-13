@@ -6,6 +6,8 @@ use failure::{bail, format_err, Fallible};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
 
+use crate::parsers;
+
 /// Possible colors of dice.
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum DiceColor {
@@ -19,7 +21,7 @@ pub enum DiceColor {
 pub enum CardKind {
     Jade,
     Gold,
-    #[allow(dead_code)]
+    #[allow(unused)]
     Fort,
 }
 
@@ -132,13 +134,22 @@ impl fmt::Display for Coord {
 }
 
 impl Coord {
-    pub fn new(x: i8, y: i8, z: i8) -> Self {
-        Coord { x, y, z }
+    /// Create a new hex grid coordinate (based on hex "cube
+    /// coordinates") as described in documentation for this struct.
+    pub fn new_hex(x: i8, y: i8) -> Self {
+        Coord { x, y, z: -x - y }
     }
 
-    /// Convert between two types of coordinates in presence of given
-    /// board.
-    #[allow(dead_code)]
+    /// Create a new square grid coordinate as described in
+    /// documentation for this struct.
+    #[allow(unused)]
+    pub fn new_square(x: i8, y: i8) -> Self {
+        Coord { x, y, z: 0 }
+    }
+
+    /// Convert between user visible (row + card) and internal
+    /// (hex/square) coordinates in presence of given board.
+    #[allow(unused)]
     fn from_user_coord(user_coord: &UserCoord, board: &Board) -> Fallible<Self> {
         if user_coord.row == 0 || user_coord.card == 0 {
             bail!("User coord numeration starts from 1");
@@ -206,7 +217,7 @@ impl UserCoord {
 pub enum Grid {
     Hex,
 
-    #[allow(dead_code)]
+    #[allow(unused)]
     Square,
 }
 
@@ -573,7 +584,7 @@ impl Game {
     }
 
     /// Applies a move to the current game state.
-    #[allow(dead_code)]
+    #[allow(unused)]
     fn apply_move(&mut self, game_move: &GameMove<Coord>) -> Fallible<()> {
         use GameMove::*;
 
@@ -699,7 +710,7 @@ impl Game {
 
 /// Representation of a possible game move. Parametrised by a type of
 /// coordinates used (user coordinates or internal ones).
-#[allow(dead_code)]
+#[allow(unused)]
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum GameMove<C> {
     Place(Die, C),
@@ -707,6 +718,14 @@ pub enum GameMove<C> {
     Fight(C),
     Surprise(C, Coord),
     Submit,
+}
+
+impl FromStr for GameMove<UserCoord> {
+    type Err = failure::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        parsers::parse_move(s)
+    }
 }
 
 #[cfg(test)]
