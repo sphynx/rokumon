@@ -1,20 +1,3 @@
-# Write a parser for moves
-
-Format can be something like this:
-
-- place W1 at R2C2
-- move B3 from R1C1 to R1C2
-- fight at R2C3
-- surprise from R1C2 to <3, -2, -1>
-- submit
-
-Surprise is tricky for the user because it requires our coordinates.
-
-So there should be a way to show the internal coordinates of available
-positions while repositioning a particular card.
-
-I think we should use `nom` for that.
-
 # Implement move generator
 
 I.e. to generate all possible moves from given position. This is
@@ -74,3 +57,19 @@ Write functions:
 - to generate all adjacent-triples for current board
 - to apply moves to the game state
 
+# DONE Write a parser for moves
+
+Format can be something like this:
+
+- place W1 at R2C2
+- move B3 from R1C1 to R1C2
+- fight at R2C3
+- surprise from R1C2 to <3, -2, -1>
+- submit
+
+Surprise is tricky for the user because it requires our coordinates.
+
+So there should be a way to show the internal coordinates of available
+positions while repositioning a particular card.
+
+I think we should use `nom` for that.
