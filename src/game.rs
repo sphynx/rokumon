@@ -1054,8 +1054,8 @@ mod test {
         game.apply_move_str("submit")?;
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
-
         let deck = standard_deck();
+
         let mut game = Game::custom(deck.clone());
         game.apply_move_str("place r2 at r1c1")?;
         game.apply_move_str("place b1 at r2c1")?;
@@ -1064,6 +1064,49 @@ mod test {
         let card = game.board.card_at(&c(0, 0)).unwrap();
         assert_eq!(card.dice.len(), 1);
         assert_eq!(card.dice[0].value, 2);
+
+        let mut game = Game::custom(deck.clone());
+        game.apply_move_str("place r6 at r1c1")?;
+        game.apply_move_str("place w1 at r2c1")?;
+        game.apply_move_str("move r6 from r1c1 to r2c1")?;
+        game.apply_move_str("fight at r2c1")?;
+        let card = game.board.card_at(&c(0, 0)).unwrap();
+        assert_eq!(card.dice.len(), 1);
+        assert_eq!(card.dice[0].value, 1);
+
+        let mut game = Game::custom(deck.clone());
+        game.apply_move_str("place r6 at r1c1")?;
+        game.apply_move_str("place w1 at r2c1")?;
+        game.apply_move_str("place r4 at r1c2")?;
+        game.apply_move_str("place b3 at r2c2")?;
+        game.apply_move_str("place r2 at r1c3")?;
+        assert_eq!(game.result, GameResult::FirstPlayerWon);
+
+        let mut game = Game::custom(deck.clone());
+        game.apply_move_str("place r6 at r2c1")?;
+        game.apply_move_str("place w1 at r1c1")?;
+        game.apply_move_str("place r4 at r2c2")?;
+        game.apply_move_str("place b3 at r1c2")?;
+        game.apply_move_str("place r2 at r2c4")?;
+        assert_eq!(game.result, GameResult::InProgress);
+
+        let mut game = Game::custom(deck.clone());
+        game.apply_move_str("place r6 at r1c1")?;
+        game.apply_move_str("place w1 at r2c2")?;
+        game.apply_move_str("place r4 at r2c1")?;
+        game.apply_move_str("surprise from r2c4 to <2,-2,0>")?;
+        game.apply_move_str("place r2 at r1c1")?;
+        assert_eq!(game.result, GameResult::FirstPlayerWon);
+
+        let mut game = Game::custom(deck.clone());
+        game.apply_move_str("place r6 at r2c1")?;
+        game.apply_move_str("place w1 at r1c1")?;
+        game.apply_move_str("place r4 at r2c2")?;
+        game.apply_move_str("move w1 from r1c1 to r2c2")?;
+        game.apply_move_str("place r2 at r2c3")?;
+        assert_eq!(game.result, GameResult::InProgress);
+        game.apply_move_str("move w1 from r2c2 to r1c1")?;
+        assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         Ok(())
     }
