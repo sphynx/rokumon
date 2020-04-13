@@ -828,9 +828,7 @@ mod test {
 
         use DiceColor::*;
         let d = Die::new;
-        fn c(x: i8, y: i8) -> Coord {
-            Coord { x, y, z: -x - y }
-        }
+        let c = Coord::new_hex;
 
         // Positive test cases.
         assert!(game.is_valid_move(&Place(d(Red, 2), c(0, 0))));
@@ -857,10 +855,7 @@ mod test {
         use GameMove::*;
 
         let game = Game::new();
-
-        fn c(x: i8, y: i8) -> Coord {
-            Coord { x, y, z: -x - y }
-        }
+        let c = Coord::new_hex;
 
         // Positive test cases.
         assert!(game.is_valid_move(&Surprise(c(0, 0), c(1, 1))));
