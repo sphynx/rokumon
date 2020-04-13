@@ -7,6 +7,7 @@ use failure::{bail, format_err, Fallible};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
 
+/// Possible colors of dice.
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 enum DiceColor {
     Red,
@@ -14,14 +15,17 @@ enum DiceColor {
     White,
 }
 
-#[allow(dead_code)]
+/// Possible card kinds. There are three of them so far.
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 enum CardKind {
     Jade,
     Gold,
+    #[allow(dead_code)]
     Fort,
 }
 
+/// A die in the game. Has a color and value. It's a normal cube die,
+/// so values are from 1 to 6.
 #[derive(PartialEq, Eq, Clone, Debug)]
 struct Die {
     value: u8,
@@ -63,6 +67,7 @@ impl fmt::Display for Die {
     }
 }
 
+/// A card in the game. It is of certain kind and may have dice on it.
 #[derive(Clone, Debug)]
 struct Card {
     kind: CardKind,
@@ -99,6 +104,21 @@ impl Card {
     }
 }
 
+/// Coordinates used for both hex and square grids.
+///
+/// For square coordinates z is always zero.
+/// For hex coordinates there is an invariant: x + y + z = 0.
+///
+/// There are different possible coordinates for hex grid. Here we use
+/// so-called "cube coordinates". They basically originate from a 3D
+/// cube sliced by a plane `x + y + z = 0`. They are very convenient
+/// for determining if two hexes lie in the same line (then they have
+/// equal x, y or z coordinates), which is useful for 3-in-line
+/// determination.
+///
+/// More details about "cube coordinates" and tons of useful
+/// hex-related information can be found here:
+/// https://www.redblobgames.com/grids/hexagons/#coordinates-cube
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 struct Coord {
     x: i8,
@@ -175,20 +195,26 @@ impl FromStr for UserCoord {
     }
 }
 
-#[allow(dead_code)]
 impl UserCoord {
+    #[allow(dead_code)]
     fn new(row: u8, card: u8) -> Self {
         UserCoord { row, card }
     }
 }
 
-#[allow(dead_code)]
+/// A type of grid to used for the game. Most of the game scenarios
+/// use hex grid (also known as "bricks layout"), but the basic one
+/// uses square grid.
 #[derive(Copy, Clone, Debug)]
 enum Grid {
     Hex,
+
+    #[allow(dead_code)]
     Square,
 }
 
+/// Represents the whole game board: cards at particular positions and
+/// a type of grid used (to make sense of positions).
 #[derive(Debug)]
 struct Board {
     grid: Grid,
@@ -197,6 +223,7 @@ struct Board {
 }
 
 impl Board {
+    /// Starting position of Act 4.
     fn starting_position() -> Board {
         let jade = Card {
             kind: CardKind::Jade,
@@ -255,6 +282,7 @@ impl Board {
         self.adj_triples = Self::adjacent_triples(&self.grid, self.cards.keys());
     }
 
+    /// The top-most row (i.e. one with the minimal y-coordinate).
     fn top_row(&self) -> i8 {
         self.cards
             .keys()
@@ -263,6 +291,7 @@ impl Board {
             .expect("top_row: cards should be non-empty")
     }
 
+    /// The bottom-most row (i.e. one with the maximal y-coordinate).
     fn bottom_row(&self) -> i8 {
         self.cards
             .keys()
@@ -297,6 +326,8 @@ impl Board {
             .sorted_by_key(|(coord, _)| coord.x)
     }
 
+    /// Check is the position has a card and it's empty. Note that "no
+    /// card" is different to "empty card".
     fn has_empty_card_at(&self, coord: &Coord) -> bool {
         self.card_at(coord).map(|c| c.dice.is_empty()).unwrap_or(false)
     }
@@ -319,6 +350,7 @@ impl Board {
             .filter(move |c| Self::distance(&self.grid, c, &pos) == 1 && *c != &exclude)
     }
 
+    /// Checks if three positions are adjacent to each other.
     fn are_three_adjacent(grid: &Grid, x: &Coord, y: &Coord, z: &Coord) -> bool {
         let mut ones = 0;
         if Self::distance(grid, x, y) == 1 {
@@ -333,6 +365,8 @@ impl Board {
         ones > 1
     }
 
+    /// Checks if three positions are in one line (but not necessary
+    /// adjacent).
     fn are_three_in_line(grid: &Grid, a: &Coord, b: &Coord, c: &Coord) -> bool {
         match grid {
             Grid::Hex => (a.x == b.x && b.x == c.x) || (a.y == b.y && b.y == c.y) || (a.z == b.z && b.z == c.z),
@@ -343,6 +377,7 @@ impl Board {
     fn adjacent_triples<'a>(grid: &Grid, coords: impl Iterator<Item = &'a Coord>) -> Vec<(Coord, Coord, Coord)> {
         let mut result = vec![];
 
+        // Note: combinations are without repetitions.
         for tri in coords.combinations(3) {
             let are_adj = Self::are_three_adjacent(grid, tri[0], tri[1], tri[2]);
             let are_in_line = Self::are_three_in_line(grid, tri[0], tri[1], tri[2]);
@@ -354,7 +389,7 @@ impl Board {
         result
     }
 
-    /// Manhattan's distance on hex and square grids.
+    /// Manhattan distance on hex and square grids.
     fn distance(grid: &Grid, a: &Coord, b: &Coord) -> usize {
         match grid {
             Grid::Hex => (a.x - b.x).abs().max((a.y - b.y).abs()).max((a.z - b.z).abs()) as usize,
@@ -381,6 +416,7 @@ impl fmt::Display for Board {
     }
 }
 
+/// A player. Has a name and a stock of dice.
 #[derive(Debug)]
 struct Player {
     name: String,
@@ -421,6 +457,8 @@ impl fmt::Display for Player {
     }
 }
 
+/// Current game result, can be either won by one of the player or
+/// still in progress.
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 enum GameResult {
     InProgress,
@@ -428,6 +466,9 @@ enum GameResult {
     SecondPlayerWon,
 }
 
+/// Represents the whole game state with board, players and additional
+/// state variables (whose move it is, number of used "surprises" and
+/// the game result).
 #[derive(Debug)]
 struct Game {
     board: Board,
@@ -482,6 +523,7 @@ impl Game {
         }
     }
 
+    /// Checks if a given move is valid in this particular game state.
     fn is_valid_move(&self, game_move: &GameMove<Coord>) -> bool {
         use GameMove::*;
         match game_move {
@@ -532,6 +574,7 @@ impl Game {
         }
     }
 
+    /// Applies a move to the current game state.
     #[allow(dead_code)]
     fn apply_move(&mut self, game_move: &GameMove<Coord>) -> Fallible<()> {
         use GameMove::*;
@@ -617,6 +660,9 @@ impl Game {
         }
     }
 
+    /// Caclulates the game result of a particular game state by
+    /// checking two victory conditions ("three-in-a-stack" and
+    /// "three-in-a-row").
     fn result(&self) -> GameResult {
         // "Three in a Stack" condition.
         for card in self.board.cards_iter() {
@@ -653,6 +699,8 @@ impl Game {
     }
 }
 
+/// Representation of a possible game move. Parametrised by a type of
+/// coordinates used (user coordinates or internal ones).
 #[derive(PartialEq, Eq, Debug, Clone)]
 enum GameMove<C> {
     Place(Die, C),
@@ -669,7 +717,11 @@ fn main() {
     println!("{}", game);
 }
 
-/// We are parsing the following format, informally given by example:
+/// The module with various nom-based parsers.
+
+/// We are parsing the following format for moves,
+/// informally given by example:
+///
 /// - place W1 at R2C2
 /// - move B3 from R1C1 to R1C2
 /// - fight at R2C3
