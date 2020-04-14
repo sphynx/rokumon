@@ -1,13 +1,8 @@
-# Implement move generator
-
-I.e. to generate all possible moves from given position. This is
-useful for tests and required for the AI.
-
-# Provide a REPL for actually playing the game - first just between two human players.
+# Provide a REPL for actually playing the game
 
 Perhaps we will need to have some better text UI for that. Not sure
 how to display the card position in text... ASCII graphics seems to be
-too much work. As the first approximation
+too much work.
 
 `rustyline` looks like a good way to do REPL:
 https://crates.io/crates/rustyline
@@ -73,3 +68,8 @@ So there should be a way to show the internal coordinates of available
 positions while repositioning a particular card.
 
 I think we should use `nom` for that.
+
+# DONE Implement move generator
+
+I.e. to generate all possible moves from given position. This is
+useful for tests and required for the AI.
