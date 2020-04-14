@@ -239,6 +239,13 @@ impl Board {
         }
     }
 
+    pub fn new_coord(&self, x: i8, y: i8) -> Coord {
+        match self.grid {
+            Grid::Hex => Coord::new_hex(x, y),
+            Grid::Square => Coord::new_square(x, y),
+        }
+    }
+
     /// Add 7 cards in a standard hex layout, first 3 cards for the
     /// top row, then 4 cards for the bottom row.
     pub fn with_seven_cards(seven_cards: [Card; 7]) -> Self {
@@ -321,6 +328,31 @@ impl Board {
             .map(|c| c.y)
             .max()
             .expect("bottom_row: cards should be non-empty")
+    }
+
+    /// Bounding box (left, right, top, bottom), inclusive.
+    fn bounding_box(&self) -> (i8, i8, i8, i8) {
+        let mut left = std::i8::MAX;
+        let mut right = std::i8::MIN;
+        let mut top = std::i8::MAX;
+        let mut bottom = std::i8::MIN;
+
+        for c in self.cards.keys() {
+            if c.x < left {
+                left = c.x;
+            }
+            if c.x > right {
+                right = c.x;
+            }
+            if c.y > bottom {
+                bottom = c.y;
+            }
+            if c.y < top {
+                top = c.y;
+            }
+        }
+
+        (left, right, top, bottom)
     }
 
     /// Cards from given `row` (`y` coordinate) ordered by `x`
@@ -601,6 +633,14 @@ impl Game {
         }
     }
 
+    fn current_player_surprises(&self) -> u8 {
+        if self.player1_moves {
+            self.player1_surprises
+        } else {
+            self.player2_surprises
+        }
+    }
+
     /// Validates a given move in this particular game state, gives an
     /// explanation if not valid, otherwise returns ().
     fn validate_move(&self, game_move: &GameMove<Coord>) -> Fallible<()> {
@@ -836,6 +876,9 @@ impl Game {
     }
 
     #[allow(unused)]
+    // Note: The move generator is supposed to be fast, but now I'm
+    // generating moves in a rather naive way. This is an obvious
+    // candidate for optimization, if we need any.
     fn generate_moves(&self) -> Vec<GameMove<Coord>> {
         let mut moves: HashSet<GameMove<Coord>> = HashSet::new();
 
@@ -856,6 +899,29 @@ impl Game {
                 }
             }
         }
+
+        for (&pos, _) in self.board.cards.iter().filter(|(coord, card)| card.dice.len() > 1) {
+            let candidate = GameMove::Fight(pos);
+            if self.validate_move(&candidate).is_ok() {
+                moves.insert(candidate);
+            }
+        }
+
+        if self.current_player_surprises() == 0 {
+            let (left, right, top, bottom) = self.board.bounding_box();
+            for &from in self.board.cards.keys() {
+                for x in left - 1..=right + 1 {
+                    for y in top - 1..=bottom + 1 {
+                        let candidate = GameMove::Surprise(from, self.board.new_coord(x, y));
+                        if self.validate_move(&candidate).is_ok() {
+                            moves.insert(candidate);
+                        }
+                    }
+                }
+            }
+        }
+
+        // We don't include Submit as a candidate move ;)
 
         moves.into_iter().collect()
     }
@@ -1217,6 +1283,18 @@ mod test {
         game.apply_move_str("move b1 from r2c2 to r1c2")?;
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_move_gen() -> Fallible<()>{
+        let deck = standard_deck();
+        let mut game = Game::custom(deck.clone());
+        assert_eq!(game.generate_moves().len(), 56);
+        game.apply_move_str("place r2 at r2c1")?;
+        assert_eq!(game.generate_moves().len(), 59);
+        game.apply_move_str("place b1 at r1c1")?;
+        assert_eq!(game.generate_moves().len(), 53);
         Ok(())
     }
 }
