@@ -1,9 +1,18 @@
 mod game;
 mod parsers;
 
-fn main() {
-    println!("Rokumon, v0.1");
+use failure::Fallible;
+use game::Game;
 
-    let game = game::Game::new();
-    println!("{}", game);
+fn main() -> Fallible<()> {
+    println!("Rokumon perft, v0.1");
+
+    let mut game = Game::new();
+    let depth = 5;
+    for d in 1..=depth {
+        let perft = game.perft(d)?;
+        println!("perft({}) = {}", d, perft);
+    }
+
+    Ok(())
 }

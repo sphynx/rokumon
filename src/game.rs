@@ -42,16 +42,16 @@ impl Die {
         self.color == DiceColor::Red
     }
 
-    /// Returns (winner, loser) pair.
-    pub fn compare_dice(d1: Die, d2: Die) -> (Die, Die) {
+    /// Returns (winner, loser) pair and whether swap happened.
+    pub fn compare_dice(d1: Die, d2: Die) -> (Die, Die, bool) {
         if d1.color == DiceColor::White && d2.value == 6 && d2.color == DiceColor::Red {
-            (d1, d2)
+            (d1, d2, false)
         } else if d2.color == DiceColor::White && d1.value == 6 && d1.color == DiceColor::Red {
-            (d2, d1)
+            (d2, d1, true)
         } else if d1.value > d2.value {
-            (d1, d2)
+            (d1, d2, false)
         } else {
-            (d2, d1)
+            (d2, d1, true)
         }
     }
 }
@@ -534,6 +534,16 @@ impl Player {
             dice: vec![d(Black, 1), d(Black, 3), d(Black, 3), d(Black, 5), d(White, 1)],
         }
     }
+
+    fn remove_die(&mut self, die: &Die) -> Fallible<()> {
+        let die_ix = self
+            .dice
+            .iter()
+            .position(|d| d == die)
+            .ok_or_else(|| format_err!("remove_die: no die {} found in player's stock", &die))?;
+        self.dice.remove(die_ix);
+        Ok(())
+    }
 }
 
 impl fmt::Display for Player {
@@ -742,11 +752,12 @@ impl Game {
     }
 
     /// Applies a move to the current game state.
-    #[allow(unused)]
-    fn apply_move(&mut self, game_move: &GameMove<Coord>) -> Fallible<()> {
+    fn apply_move(&mut self, game_move: &GameMove<Coord>) -> Fallible<Option<FightResult>> {
         use GameMove::*;
 
         self.validate_move(game_move)?;
+
+        let fight_result;
 
         // Here we consider all moves validated, so we use unwrap
         // freely, even though there might be still be failures
@@ -754,16 +765,14 @@ impl Game {
         match game_move {
             Place(die, coord) => {
                 let player = self.current_player_mut();
-
-                // Remove the die from player's stock.
-                let die_ix = player.dice.iter().position(|d| d == die).unwrap();
-                player.dice.remove(die_ix);
+                player.remove_die(&die)?;
 
                 // Add the die to the card.
                 let card = self.board.card_at_mut(coord).unwrap();
                 card.dice.push(die.clone());
 
                 self.result = self.result();
+                fight_result = None;
             }
 
             Move(_die, from, to) => {
@@ -783,15 +792,24 @@ impl Game {
 
                     self.result = self.result();
                 }
+
+                fight_result = None;
             }
 
             Fight(place) => {
                 let battle_card = self.board.card_at_mut(place).unwrap();
-                let die1 = battle_card.dice.pop().unwrap();
-                let die2 = battle_card.dice.pop().unwrap();
+                let top_die = battle_card.dice.pop().unwrap();
+                let bottom_die = battle_card.dice.pop().unwrap();
 
-                let (winner, loser) = Die::compare_dice(die1, die2);
+                let (winner, loser, swapped) = Die::compare_dice(top_die, bottom_die);
                 battle_card.dice.push(winner);
+
+                let losing_position = if swapped { ZIndex::Top } else { ZIndex::Bottom };
+                let losing_die = loser.clone();
+                fight_result = Some(FightResult {
+                    losing_die,
+                    losing_position,
+                });
 
                 if loser.belongs_to_player1() {
                     self.player1.dice.push(loser);
@@ -814,6 +832,7 @@ impl Game {
                 }
 
                 self.result = self.result();
+                fight_result = None;
             }
 
             Submit => {
@@ -822,12 +841,87 @@ impl Game {
                 } else {
                     self.result = GameResult::FirstPlayerWon;
                 }
+                fight_result = None;
             }
         };
 
         self.player1_moves = !self.player1_moves;
 
-        Ok(())
+        Ok(fight_result)
+    }
+
+    fn undo_move(&mut self, game_move: &GameMove<Coord>, fight_result: Option<FightResult>) {
+        use GameMove::*;
+
+        self.player1_moves = !self.player1_moves;
+
+        // Here we consider the move which was made validated, so we
+        // use unwrap freely, even though there might be still be
+        // failures due to programming errors.
+        match game_move {
+            Place(_die, coord) => {
+                // Remove the die from the card.
+                let card = self.board.card_at_mut(coord).unwrap();
+                let die = card.dice.pop().unwrap();
+
+                // Add the die back to player's stock. Note that it
+                // may end up in a different position in the player
+                // stock, but it doesn't matter from the game
+                // perspective.
+                let player = self.current_player_mut();
+                player.dice.push(die);
+
+                self.result = self.result();
+            }
+
+            Move(_die, from, to) => {
+                let to_card = self.board.card_at_mut(to).unwrap();
+                let die = to_card.dice.pop().unwrap();
+
+                let from_card = self.board.card_at_mut(from).unwrap();
+                from_card.dice.push(die);
+
+                self.result = self.result();
+            }
+
+            Fight(place) => {
+                let fight_result = fight_result.expect("fight_result should be provided for undo");
+                let insertion_index = match fight_result.losing_position {
+                    ZIndex::Top => 1,
+                    ZIndex::Bottom => 0,
+                };
+
+                let die = fight_result.losing_die;
+                if die.belongs_to_player1() {
+                    self.player1.remove_die(&die).unwrap();
+                } else {
+                    self.player2.remove_die(&die).unwrap();
+                }
+
+                let battle_card = self.board.card_at_mut(place).unwrap();
+                battle_card.dice.insert(insertion_index, die);
+
+                self.result = self.result();
+            }
+
+            Surprise(from, to) => {
+                let card = self.board.cards.remove(&to).unwrap();
+                self.board.cards.insert(*from, card);
+                self.board.refresh_adj_triples();
+
+                if self.player1_moves {
+                    self.player1_surprises -= 1;
+                } else {
+                    self.player2_surprises -= 1;
+                }
+
+                self.result = self.result();
+            }
+
+            Submit => {
+                self.result = GameResult::InProgress;
+            }
+        };
     }
 
     /// Caclulates the game result of a particular game state by
@@ -869,13 +963,12 @@ impl Game {
     }
 
     #[allow(unused)]
-    pub fn apply_move_str(&mut self, move_str: &str) -> Fallible<()> {
+    pub fn apply_move_str(&mut self, move_str: &str) -> Fallible<Option<FightResult>> {
         let user_move = move_str.parse()?;
         let converted_move = self.board.convert_move_coords(&user_move)?;
         self.apply_move(&converted_move)
     }
 
-    #[allow(unused)]
     // Note: The move generator is supposed to be fast, but now I'm
     // generating moves in a rather naive way. This is an obvious
     // candidate for optimization, if we need any.
@@ -900,7 +993,7 @@ impl Game {
             }
         }
 
-        for (&pos, _) in self.board.cards.iter().filter(|(coord, card)| card.dice.len() > 1) {
+        for (&pos, _) in self.board.cards.iter().filter(|(_, card)| card.dice.len() > 1) {
             let candidate = GameMove::Fight(pos);
             if self.validate_move(&candidate).is_ok() {
                 moves.insert(candidate);
@@ -925,6 +1018,22 @@ impl Game {
 
         moves.into_iter().collect()
     }
+
+    pub fn perft(&mut self, depth: usize) -> Fallible<usize> {
+        let moves = self.generate_moves();
+        if depth == 1 {
+            return Ok(moves.len());
+        }
+
+        let mut result = 0;
+        for m in moves {
+            let fight_result = self.apply_move(&m)?;
+            result += self.perft(depth - 1)?;
+            self.undo_move(&m, fight_result);
+        }
+
+        Ok(result)
+    }
 }
 
 /// Representation of a possible game move. Parametrised by a type of
@@ -945,6 +1054,18 @@ impl FromStr for GameMove<UserCoord> {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         parsers::parse_move(s)
     }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub struct FightResult {
+    pub losing_die: Die,
+    pub losing_position: ZIndex,
+}
+
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+pub enum ZIndex {
+    Top,
+    Bottom,
 }
 
 #[cfg(test)]
@@ -1287,7 +1408,7 @@ mod test {
     }
 
     #[test]
-    pub fn test_move_gen() -> Fallible<()>{
+    pub fn test_move_gen() -> Fallible<()> {
         let deck = standard_deck();
         let mut game = Game::custom(deck.clone());
         assert_eq!(game.generate_moves().len(), 56);
