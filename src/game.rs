@@ -667,6 +667,7 @@ pub struct Game {
     player1_surprises: u8,
     player2_surprises: u8,
     result: GameResult,
+    history: Vec<GameMove<Coord>>,
 }
 
 impl fmt::Display for Game {
@@ -694,6 +695,7 @@ impl Game {
             player1_surprises: 0,
             player2_surprises: 0,
             result: GameResult::InProgress,
+            history: vec![],
         }
     }
 
@@ -819,6 +821,7 @@ impl Game {
             }
             Submit => Ok(()),
         }
+
     }
 
     /// Applies a move to the current game state.
@@ -916,6 +919,7 @@ impl Game {
         };
 
         self.player1_moves = !self.player1_moves;
+        self.history.push(game_move.clone());
 
         Ok(fight_result)
     }
@@ -923,6 +927,7 @@ impl Game {
     fn undo_move(&mut self, game_move: &GameMove<Coord>, fight_result: Option<FightResult>) {
         use GameMove::*;
 
+        let last_move = self.history.pop();
         self.player1_moves = !self.player1_moves;
 
         // Here we consider the move which was made validated, so we
@@ -935,9 +940,9 @@ impl Game {
                 let die = card.dice.pop().unwrap();
 
                 // Add the die back to player's stock. Note that it
-                // may end up in a different position in the player
                 // stock, but it doesn't matter from the game
                 // perspective.
+                // may end up in a different position in the player
                 let player = self.current_player_mut();
                 player.dice.push(die);
 
@@ -946,7 +951,12 @@ impl Game {
 
             Move(_die, from, to) => {
                 let to_card = self.board.card_at_mut(to).unwrap();
-                let die = to_card.dice.pop().unwrap();
+                let die = match to_card.dice.pop() {
+                    None => {
+                        panic!("Error while undoing {:?}. History: {:?}, Game: {:?}", last_move, self.history, self)
+                    },
+                    Some(d) => d,
+                };
 
                 let from_card = self.board.card_at_mut(from).unwrap();
                 from_card.dice.push(die);
@@ -992,6 +1002,7 @@ impl Game {
                 self.result = GameResult::InProgress;
             }
         };
+
     }
 
     /// Caclulates the game result of a particular game state by
