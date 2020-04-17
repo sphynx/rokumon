@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::convert::TryFrom;
 use std::fmt;
 use std::str::FromStr;
 
@@ -24,6 +25,25 @@ pub enum CardKind {
     #[allow(unused)]
     Fort,
 }
+
+impl TryFrom<char> for CardKind {
+    type Error = failure::Error;
+    fn try_from(c: char) -> Fallible<Self> {
+        match c {
+            'g' | 'G' | 'w' | 'W' => Ok(CardKind::Gold),
+            'j' | 'J' | 'b' | 'B' => Ok(CardKind::Jade),
+            'f' | 'F' => Ok(CardKind::Fort),
+            _ => bail!("unrecognized card: {}", c),
+        }
+    }
+}
+/*
+impl From<char> for CardKind {
+    fn from(c: char) -> Self {
+        CardKind::try_from(c).unwrap()
+    }
+}
+*/
 
 /// A die in the game. Has a color and value. It's a normal cube die,
 /// so values are from 1 to 6.
@@ -69,7 +89,7 @@ impl fmt::Display for Die {
 }
 
 /// A card in the game. It is of certain kind and may have dice on it.
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Card {
     kind: CardKind,
 
@@ -102,6 +122,14 @@ impl fmt::Display for Card {
 impl Card {
     fn main_die(&self) -> Option<&Die> {
         self.dice.last()
+    }
+}
+
+impl TryFrom<char> for Card {
+    type Error = failure::Error;
+    fn try_from(c: char) -> Fallible<Self> {
+        let kind = CardKind::try_from(c)?;
+        Ok(Card { kind, dice: vec![] })
     }
 }
 
@@ -212,7 +240,7 @@ impl UserCoord {
 /// A type of grid to used for the game. Most of the game scenarios
 /// use hex grid (also known as "bricks layout"), but the basic one
 /// uses square grid.
-#[derive(Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum Grid {
     Hex,
 
@@ -230,12 +258,58 @@ pub struct Board {
 }
 
 impl Board {
-    #[allow(unused)]
-    pub fn empty() -> Self {
+    pub fn new(layout: Layout, deck: Deck) -> Self {
+        let mut cards_at_positions = HashMap::new();
+        let mut cards = deck.into_iter();
+        let grid;
+
+        match layout {
+            Layout::Bricks7 => {
+                grid = Grid::Hex;
+                // I use (0, 0, 0) coordinate for bottom-left
+                // position. Two rows: top row has y = -1, bottom row
+                // has y = 0.
+                for y in -1..=0 {
+                    for x in -y..4 {
+                        // 4 cards in the bottom row, 3 cards in the top row.
+                        cards_at_positions.insert(
+                            Coord::new_hex(x, y),
+                            cards.next().expect("Board::new: not enough cards in deck"),
+                        );
+                    }
+                }
+                assert!(cards.next().is_none(), "Board::new: some cards left in the deck");
+            }
+            Layout::Rectangle6 => {
+                grid = Grid::Square;
+                // Again, (0, 0, 0) is bottom-left corner. We have two
+                // rows with y = -1 (top) and y = 0 (bottom)
+                for y in -1..=0 {
+                    for x in 0..3 {
+                        cards_at_positions.insert(
+                            Coord::new_square(x, y),
+                            cards.next().expect("Board::new: not enough cards in deck"),
+                        );
+                    }
+                }
+                assert!(cards.next().is_none(), "Board::new: some cards left in the deck");
+            }
+            Layout::Custom(g, coords) => {
+                grid = g;
+                for &c in coords.iter() {
+                    cards_at_positions.insert(c, cards.next().expect("Board::new: not enough cards in deck"));
+                }
+                assert!(cards.next().is_none(), "Board::new: some cards left in the deck");
+            }
+            Layout::Hex7 => unimplemented!(),
+        }
+
+        let adj_triples = Self::adjacent_triples(&grid, cards_at_positions.keys());
+
         Self {
-            grid: Grid::Hex,
-            cards: HashMap::new(),
-            adj_triples: vec![],
+            grid,
+            cards: cards_at_positions,
+            adj_triples,
         }
     }
 
@@ -244,68 +318,6 @@ impl Board {
             Grid::Hex => Coord::new_hex(x, y),
             Grid::Square => Coord::new_square(x, y),
         }
-    }
-
-    /// Add 7 cards in a standard hex layout, first 3 cards for the
-    /// top row, then 4 cards for the bottom row.
-    pub fn with_seven_cards(seven_cards: [Card; 7]) -> Self {
-        let mut cards = HashMap::new();
-        let mut ix = 0;
-
-        // Put them on the board in right places. Coordinates are a
-        // little bit tricky, because they are essential hex
-        // coordinates. See here for more details:
-        // https://www.redblobgames.com/grids/hexagons/implementation.html#shape-triangle
-        // I use (0, 0, 0) coordinate for bottom-left position.
-
-        // Two rows: top row has y = -1, bottom row has y = 0.
-        for y in -1..=0 {
-            for x in -y..4 {
-                // 4 cards in the bottom row, 3 cards in the top row.
-                cards.insert(Coord::new_hex(x, y), seven_cards[ix].clone());
-                ix += 1;
-            }
-        }
-
-        assert!(cards.len() == 7);
-
-        let grid = Grid::Hex;
-        let adj_triples = Self::adjacent_triples(&grid, cards.keys());
-
-        Self {
-            grid,
-            cards,
-            adj_triples,
-        }
-    }
-
-    /// Starting position of Act 4.
-    pub fn starting_position() -> Self {
-        let jade = Card {
-            kind: CardKind::Jade,
-            dice: vec![],
-        };
-        let gold = Card {
-            kind: CardKind::Gold,
-            dice: vec![],
-        };
-
-        // Init the deck with 4 Jades and 3 Gold cards.
-        let mut deck = [
-            jade.clone(),
-            jade.clone(),
-            jade.clone(),
-            jade.clone(),
-            gold.clone(),
-            gold.clone(),
-            gold.clone(),
-        ];
-
-        // Shuffle.
-        let mut rng = rand::thread_rng();
-        &mut deck[..].shuffle(&mut rng);
-
-        Board::with_seven_cards(deck)
     }
 
     fn refresh_adj_triples(&mut self) {
@@ -569,6 +581,80 @@ pub enum GameResult {
     SecondPlayerWon,
 }
 
+#[allow(unused)]
+
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub enum Layout {
+    /// 3 x 2 layout using square grid. Act 1 in The Rules.
+    Rectangle6,
+    /// 4 + 3 layout using hex grid, as in Act 2, 3 and 4.
+    Bricks7,
+    /// Hex layout for Automa.
+    Hex7,
+    /// Any custom layout.
+    Custom(Grid, HashSet<Coord>),
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct Deck {
+    cards: Vec<Card>,
+}
+
+impl IntoIterator for Deck {
+    type Item = Card;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.cards.into_iter()
+    }
+}
+
+impl FromStr for Deck {
+    type Err = failure::Error;
+    fn from_str(s: &str) -> Fallible<Self> {
+        let cards: Fallible<Vec<Card>> = s.chars().map(Card::try_from).collect();
+        Ok(Deck { cards: cards? })
+    }
+}
+
+#[allow(unused)]
+impl Deck {
+    /// A deck with cards in order. Cards are specified by a string
+    /// like 'JJJGGGG' for 3 Jade cards and 4 Gold cards. Thy will be
+    /// dealt from the top to the bottom, from left to right do the
+    /// card positions in the layout.
+    pub fn ordered(descr: &str) -> Fallible<Self> {
+        descr.parse()
+    }
+
+    /// Shuffled deck defined by a specification like 'JJGGGG'.
+    pub fn shuffled(descr: &str) -> Fallible<Self> {
+        let mut deck: Deck = descr.parse()?;
+        deck.shuffle();
+        Ok(deck)
+    }
+
+    /// A standard deck with 4 Jades and 3 Gold cards which are
+    /// randomly shuffled.
+    pub fn seven_shuffled() -> Self {
+        let mut deck = Deck::ordered("jjjjggg").unwrap();
+        deck.shuffle();
+        deck
+    }
+
+    /// A deck with 3 Jades and 3 Gold cards.
+    pub fn six_shuffled() -> Self {
+        let mut deck = Deck::ordered("jjjggg").unwrap();
+        deck.shuffle();
+        deck
+    }
+
+    fn shuffle(&mut self) {
+        let mut rng = rand::thread_rng();
+        self.cards.as_mut_slice().shuffle(&mut rng);
+    }
+}
+
 /// Represents the whole game state with board, players and additional
 /// state variables (whose move it is, number of used "surprises" and
 /// the game result).
@@ -599,25 +685,9 @@ impl fmt::Display for Game {
 
 impl Game {
     /// Create a new game (with position from Act 4 for now).
-    pub fn new() -> Self {
+    pub fn new(layout: Layout, deck: Deck) -> Self {
         Game {
-            board: Board::starting_position(),
-            player1: Player::first(),
-            player2: Player::second(),
-            player1_moves: true,
-            player1_surprises: 0,
-            player2_surprises: 0,
-            result: GameResult::InProgress,
-        }
-    }
-
-    /// Create a custom game with predefined set of seven cards.
-    /// Layout is standard. First 3 cards go into top row, next 4 go
-    /// into the bottom row.
-    #[allow(unused)]
-    pub fn custom(cards: [Card; 7]) -> Self {
-        Game {
-            board: Board::with_seven_cards(cards),
+            board: Board::new(layout, deck),
             player1: Player::first(),
             player2: Player::second(),
             player1_moves: true,
@@ -1075,7 +1145,7 @@ mod test {
 
     #[test]
     fn test_coord_conversion() -> Fallible<()> {
-        let board = Board::starting_position();
+        let board = Board::new(Layout::Bricks7, Deck::seven_shuffled());
 
         macro_rules! test {
             ($row:literal, $card:literal => $x:literal, $y:literal, $z:literal) => {
@@ -1164,7 +1234,7 @@ mod test {
         // cards).
         use GameMove::*;
 
-        let game = Game::new();
+        let game = Game::new(Layout::Bricks7, Deck::seven_shuffled());
 
         use DiceColor::*;
         let d = Die::new;
@@ -1196,7 +1266,7 @@ mod test {
 
         use GameMove::*;
 
-        let game = Game::new();
+        let game = Game::new(Layout::Bricks7, Deck::seven_shuffled());
         let c = Coord::new_hex;
 
         // Positive test cases.
@@ -1244,53 +1314,28 @@ mod test {
         Ok(())
     }
 
-    /// Layout is as follows:
-    /// ```
-    ///  G G G
-    /// J J J J
-    /// ```
-    fn standard_deck() -> [Card; 7] {
-        let jade = Card {
-            kind: CardKind::Jade,
-            dice: vec![],
-        };
-
-        let gold = Card {
-            kind: CardKind::Gold,
-            dice: vec![],
-        };
-
-        [
-            gold.clone(),
-            gold.clone(),
-            gold.clone(),
-            jade.clone(),
-            jade.clone(),
-            jade.clone(),
-            jade.clone(),
-        ]
-    }
-
     #[test]
     fn test_apply_move() -> Fallible<()> {
         let c = Coord::new_hex;
 
         // Submit leads to loss.
-        let mut game = Game::new();
+        let mut game = Game::new(Layout::Bricks7, Deck::seven_shuffled());
+
         assert_eq!(game.result, GameResult::InProgress);
         game.apply_move_str("submit")?;
         assert_eq!(game.result, GameResult::SecondPlayerWon);
 
         // Submit leads to loss #2.
-        let mut game = Game::new();
+        let mut game = Game::new(Layout::Bricks7, Deck::seven_shuffled());
         game.apply_move_str("place r2 at r1c1")?;
         game.apply_move_str("submit")?;
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
-        let deck = standard_deck();
+        let layout = Layout::Bricks7;
+        let deck = Deck::ordered("gggjjjj")?;
 
         // Fight reduces number of dice on cards.
-        let mut game = Game::custom(deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone());
         game.apply_move_str("place r2 at r1c1")?;
         game.apply_move_str("place b1 at r2c1")?;
         game.apply_move_str("move r2 from r1c1 to r2c1")?;
@@ -1301,7 +1346,7 @@ mod test {
 
         // Fight reduces number of dice on cards.
         // White 1 beats red 6.
-        let mut game = Game::custom(deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone());
         game.apply_move_str("place r6 at r1c1")?;
         game.apply_move_str("place w1 at r2c1")?;
         game.apply_move_str("move r6 from r1c1 to r2c1")?;
@@ -1311,7 +1356,7 @@ mod test {
         assert_eq!(card.dice[0].value, 1);
 
         // Simplest 3-in-a-row win.
-        let mut game = Game::custom(deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone());
         game.apply_move_str("place r6 at r1c1")?;
         game.apply_move_str("place w1 at r2c1")?;
         game.apply_move_str("place r4 at r1c2")?;
@@ -1320,7 +1365,7 @@ mod test {
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         // 3-in-a-row doesn't count if it's adjacent.
-        let mut game = Game::custom(deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone());
         game.apply_move_str("place r6 at r2c1")?;
         game.apply_move_str("place w1 at r1c1")?;
         game.apply_move_str("place r4 at r2c2")?;
@@ -1329,7 +1374,7 @@ mod test {
         assert_eq!(game.result, GameResult::InProgress);
 
         // 3-in-a-row for newly built line.
-        let mut game = Game::custom(deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone());
         game.apply_move_str("place r6 at r1c1")?;
         game.apply_move_str("place w1 at r2c2")?;
         game.apply_move_str("place r4 at r2c1")?;
@@ -1338,7 +1383,7 @@ mod test {
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         // Uncovering a die with 3-in-a-row leads to win.
-        let mut game = Game::custom(deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone());
         game.apply_move_str("place r6 at r2c1")?;
         game.apply_move_str("place w1 at r1c1")?;
         game.apply_move_str("place r4 at r2c2")?;
@@ -1349,13 +1394,13 @@ mod test {
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         // No move between the same card kinds is allowed.
-        let mut game = Game::custom(deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone());
         game.apply_move_str("place r6 at r2c1")?;
         game.apply_move_str("place w1 at r1c1")?;
         assert!(game.apply_move_str("move r6 from r2c1 to r2c2").is_err());
 
         // Simplest 3-in-a-stack win.
-        let mut game = Game::custom(deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone());
         game.apply_move_str("place r6 at r2c1")?;
         game.apply_move_str("place w1 at r2c2")?;
         game.apply_move_str("place r4 at r1c1")?;
@@ -1370,27 +1415,9 @@ mod test {
 
         // Simultaneous 3-in-a-row for both players.
         // (plus a stack and actually 4-in-a-row)
-        let jade = Card {
-            kind: CardKind::Jade,
-            dice: vec![],
-        };
 
-        let gold = Card {
-            kind: CardKind::Gold,
-            dice: vec![],
-        };
-
-        let deck = [
-            gold.clone(),
-            gold.clone(),
-            gold.clone(),
-            jade.clone(),
-            jade.clone(),
-            jade.clone(),
-            gold.clone(),
-        ];
-
-        let mut game = Game::custom(deck.clone());
+        let deck = Deck::ordered("gggjjjg")?;
+        let mut game = Game::new(layout, deck);
         game.apply_move_str("place r2 at r2c1")?;
         game.apply_move_str("place b1 at r1c1")?;
         game.apply_move_str("place r2 at r2c2")?;
@@ -1409,8 +1436,8 @@ mod test {
 
     #[test]
     pub fn test_move_gen() -> Fallible<()> {
-        let deck = standard_deck();
-        let mut game = Game::custom(deck.clone());
+        let deck = Deck::ordered("gggjjjj")?;
+        let mut game = Game::new(Layout::Bricks7, deck);
         assert_eq!(game.generate_moves().len(), 56);
         game.apply_move_str("place r2 at r2c1")?;
         assert_eq!(game.generate_moves().len(), 59);
