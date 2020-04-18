@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 use std::convert::TryFrom;
 use std::fmt;
 use std::str::FromStr;
@@ -10,7 +10,7 @@ use rand::seq::SliceRandom;
 use crate::parsers;
 
 /// Possible colors of dice.
-#[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Debug, Hash)]
 pub enum DiceColor {
     Red,
     Black,
@@ -19,7 +19,7 @@ pub enum DiceColor {
 
 /// A die in the game. Has a color and value. It's a normal cube die,
 /// so values are from 1 to 6.
-#[derive(PartialEq, Eq, Clone, Debug, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Hash)]
 pub struct Die {
     color: DiceColor,
     value: u8,
@@ -204,7 +204,7 @@ impl Deck {
 /// More details about "cube coordinates" and tons of useful
 /// hex-related information can be found here:
 /// https://www.redblobgames.com/grids/hexagons/#coordinates-cube
-#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Copy, Clone)]
 pub struct Coord {
     x: i8,
     y: i8,
@@ -260,7 +260,7 @@ impl Coord {
 /// More user-friendly coordinates easier to undertand and type. Row
 /// is counted from 1 and start from the top. Card is counted from 1
 /// and starts from the left.
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
 pub struct UserCoord {
     row: u8,
     card: u8,
@@ -312,7 +312,7 @@ pub enum Layout {
     /// Hex layout for Automa.
     Hex7,
     /// Any custom layout.
-    Custom(Grid, HashSet<Coord>),
+    Custom(Grid, BTreeSet<Coord>),
 }
 
 /// Represents the whole game board: cards at particular positions and
@@ -380,6 +380,7 @@ impl Board {
         }
     }
 
+    #[allow(unused)]
     pub fn new_coord(&self, x: i8, y: i8) -> Coord {
         match self.grid {
             Grid::Hex => Coord::new_hex(x, y),
@@ -410,6 +411,7 @@ impl Board {
     }
 
     /// Bounding box (left, right, top, bottom), inclusive.
+    #[allow(unused)]
     fn bounding_box(&self) -> (i8, i8, i8, i8) {
         let mut left = std::i8::MAX;
         let mut right = std::i8::MIN;
@@ -642,7 +644,7 @@ impl fmt::Display for Player {
 /// Representation of a possible game move. Parametrised by a type of
 /// coordinates used (user coordinates or internal ones).
 #[allow(unused)]
-#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Hash)]
 pub enum GameMove<C> {
     Place(Die, C),
     Move(Die, C, C),
@@ -740,6 +742,7 @@ impl Game {
         }
     }
 
+    #[allow(unused)]
     fn current_player_surprises(&self) -> u8 {
         if self.player1_moves {
             self.player1_surprises
@@ -959,7 +962,7 @@ impl Game {
     fn undo_move(&mut self, game_move: &GameMove<Coord>, fight_result: Option<FightResult>) {
         use GameMove::*;
 
-        let last_move = self.history.pop();
+        self.history.pop();
         self.player1_moves = !self.player1_moves;
 
         // Here we consider the move which was made validated, so we
@@ -983,13 +986,7 @@ impl Game {
 
             Move(_die, from, to) => {
                 let to_card = self.board.card_at_mut(to).unwrap();
-                let die = match to_card.dice.pop() {
-                    None => panic!(
-                        "Error while undoing {:?}. History: {:?}, Game: {:?}",
-                        last_move, self.history, self
-                    ),
-                    Some(d) => d,
-                };
+                let die = to_card.dice.pop().unwrap();
 
                 let from_card = self.board.card_at_mut(from).unwrap();
                 from_card.dice.push(die);
@@ -1085,9 +1082,12 @@ impl Game {
     // Note: The move generator is supposed to be fast, but now I'm
     // generating moves in a rather naive way. This is an obvious
     // candidate for optimization, if we need any.
-    fn generate_moves(&self) -> Vec<GameMove<Coord>> {
-        let mut moves: HashSet<GameMove<Coord>> = HashSet::new();
+    fn generate_moves(&self, allow_fights: bool, allow_surprises: bool) -> Vec<GameMove<Coord>> {
+        if self.result != GameResult::InProgress {
+            return vec![];
+        }
 
+        let mut moves: BTreeSet<GameMove<Coord>> = BTreeSet::new();
         let stock = &self.current_player().dice;
         for (&coord, _card) in self.board.empty_cards_iter() {
             for d in stock {
@@ -1106,21 +1106,25 @@ impl Game {
             }
         }
 
-        for (&pos, _) in self.board.cards.iter().filter(|(_, card)| card.dice.len() > 1) {
-            let candidate = GameMove::Fight(pos);
-            if self.validate_move(&candidate).is_ok() {
-                moves.insert(candidate);
+        if allow_fights {
+            for (&pos, _) in self.board.cards.iter().filter(|(_, card)| card.dice.len() > 1) {
+                let candidate = GameMove::Fight(pos);
+                if self.validate_move(&candidate).is_ok() {
+                    moves.insert(candidate);
+                }
             }
         }
 
-        if self.current_player_surprises() == 0 {
-            let (left, right, top, bottom) = self.board.bounding_box();
-            for &from in self.board.cards.keys() {
-                for x in left - 1..=right + 1 {
-                    for y in top - 1..=bottom + 1 {
-                        let candidate = GameMove::Surprise(from, self.board.new_coord(x, y));
-                        if self.validate_move(&candidate).is_ok() {
-                            moves.insert(candidate);
+        if allow_surprises {
+            if self.current_player_surprises() == 0 {
+                let (left, right, top, bottom) = self.board.bounding_box();
+                for &from in self.board.cards.keys() {
+                    for x in left - 1..=right + 1 {
+                        for y in top - 1..=bottom + 1 {
+                            let candidate = GameMove::Surprise(from, self.board.new_coord(x, y));
+                            if self.validate_move(&candidate).is_ok() {
+                                moves.insert(candidate);
+                            }
                         }
                     }
                 }
@@ -1132,8 +1136,8 @@ impl Game {
         moves.into_iter().collect()
     }
 
-    pub fn perft(&mut self, depth: usize) -> Fallible<usize> {
-        let moves = self.generate_moves();
+    pub fn perft(&mut self, depth: usize, allow_fights: bool, allow_surprises: bool) -> Fallible<usize> {
+        let moves = self.generate_moves(allow_fights, allow_surprises);
         if depth == 1 {
             return Ok(moves.len());
         }
@@ -1141,7 +1145,7 @@ impl Game {
         let mut result = 0;
         for m in moves {
             let fight_result = self.apply_move(&m)?;
-            result += self.perft(depth - 1)?;
+            result += self.perft(depth - 1, allow_fights, allow_surprises)?;
             self.undo_move(&m, fight_result);
         }
 
@@ -1449,11 +1453,29 @@ mod test {
     pub fn test_move_gen() -> Fallible<()> {
         let deck = Deck::ordered("gggjjjj")?;
         let mut game = Game::new(Layout::Bricks7, deck);
-        assert_eq!(game.generate_moves().len(), 56);
+        let allow_fights = true;
+        let allow_surprises = true;
+        assert_eq!(game.generate_moves(allow_fights, allow_surprises).len(), 56);
         game.apply_move_str("place r2 at r2c1")?;
-        assert_eq!(game.generate_moves().len(), 59);
+        assert_eq!(game.generate_moves(allow_fights, allow_surprises).len(), 59);
         game.apply_move_str("place b1 at r1c1")?;
-        assert_eq!(game.generate_moves().len(), 53);
+        assert_eq!(game.generate_moves(allow_fights, allow_surprises).len(), 53);
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_applied_moved_to_finished_game_bug() -> Fallible<()> {
+        let deck = Deck::ordered("gggjjjj")?;
+        let mut game = Game::new(Layout::Bricks7, deck);
+        game.apply_move_str("place r2 at r2c3")?;
+        game.apply_move_str("place b3 at r2c1")?;
+        game.apply_move_str("place r6 at r2c4")?;
+        game.apply_move_str("place b5 at r1c2")?;
+        game.apply_move_str("place r4 at r1c3")?;
+        game.apply_move_str("move b5 from r1c2 to r2c1")?;
+        game.apply_move_str("move r4 from r1c3 to r2c2")?;
+        assert_eq!(game.result, GameResult::FirstPlayerWon);
+
         Ok(())
     }
 }
