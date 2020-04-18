@@ -1,3 +1,34 @@
+# Parametrize a game with particular instances of the rules, used cards and board layout
+
+This would allow to quickly experiment with different set of rules.
+
+# Provide command line arguments to experiment with the game
+
+May be similar to my Hamisado game:
+https://github.com/sphynx/hamisado/blob/master/Hamisado.hs
+
+Useful options:
+
+- play mode (Perft, Play, others)
+- opponents (AIHuman, HumanAI, HumanHuman, AIAI, Analyse)
+- rule variations (--disable-fight-move, --disable-surprise-move)
+- starting position and layout (--cards=JJJGGGG --layout=Brick7), shuffled by default
+- depth used for perft or analysis
+- maybe seed for reproducibility
+
+We should use `structopt` crate for this.
+
+# Add a mode to play random games
+
+This we can explore the game tree in depth, perhaps it will be useful
+for exposing certain move generator bugs.
+
+Also, it can help answer interesting questions about expected length
+of random game, who is expected to win it, etc.
+
+We can also experiment with different distributions, but for start the
+uniform distribution over all possible moves should be fine.
+
 # Provide a REPL for actually playing the game
 
 Perhaps we will need to have some better text UI for that. Not sure
@@ -7,16 +38,13 @@ too much work.
 `rustyline` looks like a good way to do REPL:
 https://crates.io/crates/rustyline
 
-# Parametrize a game with particular instances of the rules, used cards and board layout
-
-This would allow to quickly experiment with different set of rules.
-
-# Implement Automa - an AI from the game rules used for solo play
-
 # Implement my own AI (based on alpha-beta pruning)
 
 `rubot` crate seems to be a good fit for the job:
 https://docs.rs/rubot/0.2.0/rubot/trait.Game.html
+
+
+# Implement Automa - an AI from the game rules used for solo play
 
 # Implement UI (either Web-based or based on something like ggez or just some UI library).
 
@@ -73,3 +101,4 @@ I think we should use `nom` for that.
 
 I.e. to generate all possible moves from given position. This is
 useful for tests and required for the AI.
+
