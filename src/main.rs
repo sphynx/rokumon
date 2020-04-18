@@ -3,11 +3,13 @@ mod card;
 mod coord;
 mod game;
 mod parsers;
+mod perft;
 
 use board::Layout;
 use card::Deck;
 use failure::{bail, Fallible};
 use game::{Game, Rules};
+use perft::*;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 use std::time::Instant;
@@ -16,15 +18,16 @@ use structopt::StructOpt;
 #[derive(Debug)]
 enum PlayMode {
     Perft,
+    ParallelPerft,
 }
 
 impl FromStr for PlayMode {
     type Err = failure::Error;
     fn from_str(s: &str) -> Fallible<Self> {
-        if s.to_lowercase() == "perft" {
-            Ok(PlayMode::Perft)
-        } else {
-            bail!("can't parse play mode: {}", s);
+        match s.to_lowercase().as_str() {
+            "perft" => Ok(PlayMode::Perft),
+            "par_perft" => Ok(PlayMode::ParallelPerft),
+            _ => bail!("can't parse play mode: {}", s),
         }
     }
 }
@@ -68,18 +71,21 @@ fn main() -> Fallible<()> {
 
     let deck = Deck::ordered(opt.cards.as_str())?;
     let rules = Rules::new(opt.enable_fight_move, opt.enable_surprise_move);
-    let depth = opt.depth;
+    let max_depth = opt.depth;
 
     let mut game = Game::new(Layout::Bricks7, deck, rules);
 
-    for d in 1..=depth {
+    for depth in 1..=max_depth {
         let now = Instant::now();
-        let perft = game.perft(d)?;
+        let perft = match opt.mode {
+            PlayMode::Perft => perft(&mut game, depth)?,
+            PlayMode::ParallelPerft => parallel_perft(&game, depth)?,
+        };
         let elapsed_seconds = now.elapsed().as_secs();
         let ratio = perft as f64 / now.elapsed().as_micros() as f64 * 1e6;
         println!(
             "perft({}) = {}, elapsed: {}s, {:.0} moves/s",
-            d, perft, elapsed_seconds, ratio
+            depth, perft, elapsed_seconds, ratio
         );
     }
 

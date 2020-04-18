@@ -10,7 +10,7 @@ use crate::coord::{Coord, UserCoord};
 use crate::parsers;
 
 /// A player. Has a name and a stock of dice.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Player {
     name: String,
     dice: Vec<Die>,
@@ -129,7 +129,7 @@ impl Rules {
 /// Represents the whole game state with board, players and additional
 /// state variables (whose move it is, number of used "surprises" and
 /// the game result).
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Game {
     board: Board,
     rules: Rules,
@@ -313,7 +313,7 @@ impl Game {
     }
 
     /// Applies a move to the current game state.
-    fn apply_move(&mut self, game_move: &GameMove<Coord>) -> Fallible<Option<FightResult>> {
+    pub fn apply_move(&mut self, game_move: &GameMove<Coord>) -> Fallible<Option<FightResult>> {
         use GameMove::*;
 
         self.validate_move(game_move)?;
@@ -413,7 +413,7 @@ impl Game {
         Ok(fight_result)
     }
 
-    fn undo_move(&mut self, game_move: &GameMove<Coord>, fight_result: Option<FightResult>) {
+    pub fn undo_move(&mut self, game_move: &GameMove<Coord>, fight_result: Option<FightResult>) {
         use GameMove::*;
 
         self.history.pop();
@@ -536,7 +536,7 @@ impl Game {
     // Note: The move generator is supposed to be fast, but now I'm
     // generating moves in a rather naive way. This is an obvious
     // candidate for optimization, if we need any.
-    fn generate_moves(&self) -> Vec<GameMove<Coord>> {
+    pub fn generate_moves(&self) -> Vec<GameMove<Coord>> {
         if self.result != GameResult::InProgress {
             return vec![];
         }
@@ -588,22 +588,6 @@ impl Game {
         // We don't include Submit as a candidate move ;)
 
         moves.into_iter().collect()
-    }
-
-    pub fn perft(&mut self, depth: usize) -> Fallible<usize> {
-        let moves = self.generate_moves();
-        if depth == 1 {
-            return Ok(moves.len());
-        }
-
-        let mut result = 0;
-        for m in moves {
-            let fight_result = self.apply_move(&m)?;
-            result += self.perft(depth - 1)?;
-            self.undo_move(&m, fight_result);
-        }
-
-        Ok(result)
     }
 }
 
@@ -829,23 +813,6 @@ mod test {
         assert_eq!(game.generate_moves().len(), 59);
         game.apply_move_str("place b1 at r1c1")?;
         assert_eq!(game.generate_moves().len(), 53);
-        Ok(())
-    }
-
-    #[test]
-    pub fn test_perft() -> Fallible<()> {
-        let deck = Deck::ordered("gggjjjj")?;
-        let rules = Rules::new(true, true);
-        let mut game = Game::new(Layout::Bricks7, deck.clone(), rules);
-        assert_eq!(game.perft(1)?, 56);
-
-        let rules = Rules::new(true, false);
-        let mut game = Game::new(Layout::Bricks7, deck.clone(), rules);
-        assert_eq!(game.perft(1)?, 21);
-        assert_eq!(game.perft(2)?, 504);
-        assert_eq!(game.perft(3)?, 7608);
-        assert_eq!(game.perft(4)?, 130800);
-
         Ok(())
     }
 
