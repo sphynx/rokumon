@@ -22,6 +22,15 @@ Useful options:
 
 We should use `structopt` crate for this.
 
+# Better structure
+
+Move coords, decks and game board logic into separate files, since
+current game.rs is too large.
+
+# Add visualization of the game state
+
+Generate an SVG image or something.
+
 # Add a mode to play random games
 
 This we can explore the game tree in depth, perhaps it will be useful
@@ -56,6 +65,11 @@ then validate if they can actually be made). We may improve on that
 and try to generate good moves in the first place, it may lead to
 small improvements (small because we will still need to check similar
 conditions whether the move is valid or not).
+
+# Add benchmarks
+
+Which can help us with choosing data structures and quickly seeing
+effects of various changes.
 
 # Implement my own AI (based on alpha-beta pruning)
 
