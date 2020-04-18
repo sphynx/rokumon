@@ -8,7 +8,9 @@
 /// - fight at R2C3
 /// - surprise from R1C2 to <3, -2, -1>
 /// - submit
-use crate::game::*;
+use crate::card::{DiceColor, Die};
+use crate::coord::{Coord, UserCoord};
+use crate::game::GameMove;
 
 use failure::{bail, Fallible};
 

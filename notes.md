@@ -6,11 +6,6 @@ should be identity operation. However, currently it's not always so,
 since sometimes we put a die back in player's supply in a different
 place. If we ignore the order -- this will be eliminated.
 
-# Better structure
-
-Move coords, decks and game board logic into separate files, since
-current game.rs is too large.
-
 # Add visualization of the game state
 
 Generate an SVG image or something.
@@ -151,4 +146,9 @@ Useful options:
 - maybe seed for reproducibility
 
 We should use `structopt` crate for this.
+
+# DONE Better structure
+
+Move coords, decks and game board logic into separate files, since
+current game.rs is too large.
 

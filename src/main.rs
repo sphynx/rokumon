@@ -1,8 +1,13 @@
+mod board;
+mod card;
+mod coord;
 mod game;
 mod parsers;
 
+use board::Layout;
+use card::Deck;
 use failure::{bail, Fallible};
-use game::{Deck, Game, Layout, Rules};
+use game::{Game, Rules};
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 use std::time::Instant;
