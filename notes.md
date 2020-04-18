@@ -1,12 +1,3 @@
-# Parametrize a game with particular instances of the rules, used cards and board layout
-
-This would allow to quickly experiment with different set of rules.
-
-Already done for cards and layouts. Still have to do for GameRules
-(currently just two booleans).
-
-Perhaps Builder pattern can be handy here.
-
 # Make dice in player's stock multisets instead of vectors
 
 We should ignore the order there, since it's not important in the game
@@ -129,3 +120,11 @@ I think we should use `nom` for that.
 I.e. to generate all possible moves from given position. This is
 useful for tests and required for the AI.
 
+# DONE Parametrize a game with particular instances of the rules, used cards and board layout
+
+This would allow to quickly experiment with different set of rules.
+
+Already done for cards and layouts. Still have to do for GameRules
+(currently just two booleans).
+
+Perhaps Builder pattern can be handy here.

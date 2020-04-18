@@ -682,12 +682,39 @@ pub enum GameResult {
     SecondPlayerWon,
 }
 
+/// Variations in game rules. Currently, it's whether we allow certain
+/// moves or not.
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+pub struct Rules {
+    enable_fight_move: bool,
+    enable_surprise_move: bool,
+}
+
+impl Default for Rules {
+    fn default() -> Self {
+        Rules {
+            enable_fight_move: true,
+            enable_surprise_move: true,
+        }
+    }
+}
+
+impl Rules {
+    pub fn new(enable_fight_move: bool, enable_surprise_move: bool) -> Self {
+        Rules {
+            enable_fight_move,
+            enable_surprise_move,
+        }
+    }
+}
+
 /// Represents the whole game state with board, players and additional
 /// state variables (whose move it is, number of used "surprises" and
 /// the game result).
 #[derive(Debug)]
 pub struct Game {
     board: Board,
+    rules: Rules,
     player1: Player,
     player2: Player,
     player1_moves: bool,
@@ -713,9 +740,10 @@ impl fmt::Display for Game {
 
 impl Game {
     /// Create a new game (with position from Act 4 for now).
-    pub fn new(layout: Layout, deck: Deck) -> Self {
+    pub fn new(layout: Layout, deck: Deck, rules: Rules) -> Self {
         Game {
             board: Board::new(layout, deck),
+            rules,
             player1: Player::first(),
             player2: Player::second(),
             player1_moves: true,
@@ -805,29 +833,38 @@ impl Game {
                     _ => bail!("move: there should be cards at both `from` and `to` locations"),
                 }
             }
-            Fight(coord) => match self.board.card_at(coord) {
-                Some(card) => {
-                    let num_of_dice = card.dice.len();
-                    ensure!(
-                        num_of_dice == 2,
-                        "fight: can only fight at a card with two dice, but have: {}",
-                        num_of_dice
-                    );
+            Fight(coord) => {
+                ensure!(
+                    self.rules.enable_fight_move,
+                    "fight: fight moves are disabled in the rules"
+                );
+                match self.board.card_at(coord) {
+                    Some(card) => {
+                        let num_of_dice = card.dice.len();
+                        ensure!(
+                            num_of_dice == 2,
+                            "fight: can only fight at a card with two dice, but have: {}",
+                            num_of_dice
+                        );
 
-                    let at_least_one_yours = card.dice.iter().any(|d| d.belongs_to_player1() == self.player1_moves);
-                    ensure!(at_least_one_yours, "fight: at least once die should be yours");
+                        let at_least_one_yours = card.dice.iter().any(|d| d.belongs_to_player1() == self.player1_moves);
+                        ensure!(at_least_one_yours, "fight: at least once die should be yours");
 
-                    Ok(())
+                        Ok(())
+                    }
+                    _ => bail!("fight: there should be a card at: {}", coord),
                 }
-                _ => bail!("fight: there should be a card at: {}", coord),
-            },
+            }
             Surprise(from, to) => {
+                ensure!(
+                    self.rules.enable_surprise_move,
+                    "surprise: surprise moves are disabled in the rules"
+                );
                 ensure!(
                     self.board.card_at(from).is_some(),
                     "surprise: should have a card at: {}",
                     from
                 );
-
                 ensure!(
                     self.board.card_at(to).is_none(),
                     "surprise: should be empty position at: {}",
@@ -1082,7 +1119,7 @@ impl Game {
     // Note: The move generator is supposed to be fast, but now I'm
     // generating moves in a rather naive way. This is an obvious
     // candidate for optimization, if we need any.
-    fn generate_moves(&self, allow_fights: bool, allow_surprises: bool) -> Vec<GameMove<Coord>> {
+    fn generate_moves(&self) -> Vec<GameMove<Coord>> {
         if self.result != GameResult::InProgress {
             return vec![];
         }
@@ -1106,7 +1143,7 @@ impl Game {
             }
         }
 
-        if allow_fights {
+        if self.rules.enable_fight_move {
             for (&pos, _) in self.board.cards.iter().filter(|(_, card)| card.dice.len() > 1) {
                 let candidate = GameMove::Fight(pos);
                 if self.validate_move(&candidate).is_ok() {
@@ -1115,7 +1152,7 @@ impl Game {
             }
         }
 
-        if allow_surprises {
+        if self.rules.enable_surprise_move {
             if self.current_player_surprises() == 0 {
                 let (left, right, top, bottom) = self.board.bounding_box();
                 for &from in self.board.cards.keys() {
@@ -1136,8 +1173,8 @@ impl Game {
         moves.into_iter().collect()
     }
 
-    pub fn perft(&mut self, depth: usize, allow_fights: bool, allow_surprises: bool) -> Fallible<usize> {
-        let moves = self.generate_moves(allow_fights, allow_surprises);
+    pub fn perft(&mut self, depth: usize) -> Fallible<usize> {
+        let moves = self.generate_moves();
         if depth == 1 {
             return Ok(moves.len());
         }
@@ -1145,7 +1182,7 @@ impl Game {
         let mut result = 0;
         for m in moves {
             let fight_result = self.apply_move(&m)?;
-            result += self.perft(depth - 1, allow_fights, allow_surprises)?;
+            result += self.perft(depth - 1)?;
             self.undo_move(&m, fight_result);
         }
 
@@ -1249,7 +1286,7 @@ mod test {
         // cards).
         use GameMove::*;
 
-        let game = Game::new(Layout::Bricks7, Deck::seven_shuffled());
+        let game = Game::new(Layout::Bricks7, Deck::seven_shuffled(), Default::default());
 
         use DiceColor::*;
         let d = Die::new;
@@ -1281,7 +1318,7 @@ mod test {
 
         use GameMove::*;
 
-        let game = Game::new(Layout::Bricks7, Deck::seven_shuffled());
+        let game = Game::new(Layout::Bricks7, Deck::seven_shuffled(), Default::default());
         let c = Coord::new_hex;
 
         // Positive test cases.
@@ -1334,14 +1371,14 @@ mod test {
         let c = Coord::new_hex;
 
         // Submit leads to loss.
-        let mut game = Game::new(Layout::Bricks7, Deck::seven_shuffled());
+        let mut game = Game::new(Layout::Bricks7, Deck::seven_shuffled(), Default::default());
 
         assert_eq!(game.result, GameResult::InProgress);
         game.apply_move_str("submit")?;
         assert_eq!(game.result, GameResult::SecondPlayerWon);
 
         // Submit leads to loss #2.
-        let mut game = Game::new(Layout::Bricks7, Deck::seven_shuffled());
+        let mut game = Game::new(Layout::Bricks7, Deck::seven_shuffled(), Default::default());
         game.apply_move_str("place r2 at r1c1")?;
         game.apply_move_str("submit")?;
         assert_eq!(game.result, GameResult::FirstPlayerWon);
@@ -1350,7 +1387,7 @@ mod test {
         let deck = Deck::ordered("gggjjjj")?;
 
         // Fight reduces number of dice on cards.
-        let mut game = Game::new(layout.clone(), deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
         game.apply_move_str("place r2 at r1c1")?;
         game.apply_move_str("place b1 at r2c1")?;
         game.apply_move_str("move r2 from r1c1 to r2c1")?;
@@ -1361,7 +1398,7 @@ mod test {
 
         // Fight reduces number of dice on cards.
         // White 1 beats red 6.
-        let mut game = Game::new(layout.clone(), deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
         game.apply_move_str("place r6 at r1c1")?;
         game.apply_move_str("place w1 at r2c1")?;
         game.apply_move_str("move r6 from r1c1 to r2c1")?;
@@ -1371,7 +1408,7 @@ mod test {
         assert_eq!(card.dice[0].value, 1);
 
         // Simplest 3-in-a-row win.
-        let mut game = Game::new(layout.clone(), deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
         game.apply_move_str("place r6 at r1c1")?;
         game.apply_move_str("place w1 at r2c1")?;
         game.apply_move_str("place r4 at r1c2")?;
@@ -1380,7 +1417,7 @@ mod test {
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         // 3-in-a-row doesn't count if it's adjacent.
-        let mut game = Game::new(layout.clone(), deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
         game.apply_move_str("place r6 at r2c1")?;
         game.apply_move_str("place w1 at r1c1")?;
         game.apply_move_str("place r4 at r2c2")?;
@@ -1389,7 +1426,7 @@ mod test {
         assert_eq!(game.result, GameResult::InProgress);
 
         // 3-in-a-row for newly built line.
-        let mut game = Game::new(layout.clone(), deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
         game.apply_move_str("place r6 at r1c1")?;
         game.apply_move_str("place w1 at r2c2")?;
         game.apply_move_str("place r4 at r2c1")?;
@@ -1398,7 +1435,7 @@ mod test {
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         // Uncovering a die with 3-in-a-row leads to win.
-        let mut game = Game::new(layout.clone(), deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
         game.apply_move_str("place r6 at r2c1")?;
         game.apply_move_str("place w1 at r1c1")?;
         game.apply_move_str("place r4 at r2c2")?;
@@ -1409,13 +1446,13 @@ mod test {
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         // No move between the same card kinds is allowed.
-        let mut game = Game::new(layout.clone(), deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
         game.apply_move_str("place r6 at r2c1")?;
         game.apply_move_str("place w1 at r1c1")?;
         assert!(game.apply_move_str("move r6 from r2c1 to r2c2").is_err());
 
         // Simplest 3-in-a-stack win.
-        let mut game = Game::new(layout.clone(), deck.clone());
+        let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
         game.apply_move_str("place r6 at r2c1")?;
         game.apply_move_str("place w1 at r2c2")?;
         game.apply_move_str("place r4 at r1c1")?;
@@ -1432,7 +1469,7 @@ mod test {
         // (plus a stack and actually 4-in-a-row)
 
         let deck = Deck::ordered("gggjjjg")?;
-        let mut game = Game::new(layout, deck);
+        let mut game = Game::new(layout, deck, Default::default());
         game.apply_move_str("place r2 at r2c1")?;
         game.apply_move_str("place b1 at r1c1")?;
         game.apply_move_str("place r2 at r2c2")?;
@@ -1452,21 +1489,36 @@ mod test {
     #[test]
     pub fn test_move_gen() -> Fallible<()> {
         let deck = Deck::ordered("gggjjjj")?;
-        let mut game = Game::new(Layout::Bricks7, deck);
-        let allow_fights = true;
-        let allow_surprises = true;
-        assert_eq!(game.generate_moves(allow_fights, allow_surprises).len(), 56);
+        let mut game = Game::new(Layout::Bricks7, deck, Default::default());
+        assert_eq!(game.generate_moves().len(), 56);
         game.apply_move_str("place r2 at r2c1")?;
-        assert_eq!(game.generate_moves(allow_fights, allow_surprises).len(), 59);
+        assert_eq!(game.generate_moves().len(), 59);
         game.apply_move_str("place b1 at r1c1")?;
-        assert_eq!(game.generate_moves(allow_fights, allow_surprises).len(), 53);
+        assert_eq!(game.generate_moves().len(), 53);
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_perft() -> Fallible<()> {
+        let deck = Deck::ordered("gggjjjj")?;
+        let rules = Rules::new(true, true);
+        let mut game = Game::new(Layout::Bricks7, deck.clone(), rules);
+        assert_eq!(game.perft(1)?, 56);
+
+        let rules = Rules::new(true, false);
+        let mut game = Game::new(Layout::Bricks7, deck.clone(), rules);
+        assert_eq!(game.perft(1)?, 21);
+        assert_eq!(game.perft(2)?, 504);
+        assert_eq!(game.perft(3)?, 7608);
+        assert_eq!(game.perft(4)?, 130800);
+
         Ok(())
     }
 
     #[test]
     pub fn test_applied_moved_to_finished_game_bug() -> Fallible<()> {
         let deck = Deck::ordered("gggjjjj")?;
-        let mut game = Game::new(Layout::Bricks7, deck);
+        let mut game = Game::new(Layout::Bricks7, deck, Default::default());
         game.apply_move_str("place r2 at r2c3")?;
         game.apply_move_str("place b3 at r2c1")?;
         game.apply_move_str("place r6 at r2c4")?;
