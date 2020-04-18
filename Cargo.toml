@@ -10,3 +10,5 @@ itertools = "0.9"
 failure = "0.1"
 nom = "5"
 
+[profile.release]
+debug = true
