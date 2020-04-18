@@ -17,34 +17,6 @@ pub enum DiceColor {
     White,
 }
 
-/// Possible card kinds. There are three of them so far.
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
-pub enum CardKind {
-    Jade,
-    Gold,
-    #[allow(unused)]
-    Fort,
-}
-
-impl TryFrom<char> for CardKind {
-    type Error = failure::Error;
-    fn try_from(c: char) -> Fallible<Self> {
-        match c {
-            'g' | 'G' | 'w' | 'W' => Ok(CardKind::Gold),
-            'j' | 'J' | 'b' | 'B' => Ok(CardKind::Jade),
-            'f' | 'F' => Ok(CardKind::Fort),
-            _ => bail!("unrecognized card: {}", c),
-        }
-    }
-}
-/*
-impl From<char> for CardKind {
-    fn from(c: char) -> Self {
-        CardKind::try_from(c).unwrap()
-    }
-}
-*/
-
 /// A die in the game. Has a color and value. It's a normal cube die,
 /// so values are from 1 to 6.
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
@@ -85,6 +57,27 @@ impl fmt::Display for Die {
             DiceColor::Black => "B",
         };
         write!(f, "{}{}", color, self.value)
+    }
+}
+
+/// Possible card kinds. There are three of them so far.
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+pub enum CardKind {
+    Jade,
+    Gold,
+    #[allow(unused)]
+    Fort,
+}
+
+impl TryFrom<char> for CardKind {
+    type Error = failure::Error;
+    fn try_from(c: char) -> Fallible<Self> {
+        match c {
+            'g' | 'G' | 'w' | 'W' => Ok(CardKind::Gold),
+            'j' | 'J' | 'b' | 'B' => Ok(CardKind::Jade),
+            'f' | 'F' => Ok(CardKind::Fort),
+            _ => bail!("unrecognized card: {}", c),
+        }
     }
 }
 
@@ -130,6 +123,69 @@ impl TryFrom<char> for Card {
     fn try_from(c: char) -> Fallible<Self> {
         let kind = CardKind::try_from(c)?;
         Ok(Card { kind, dice: vec![] })
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct Deck {
+    cards: Vec<Card>,
+}
+
+impl IntoIterator for Deck {
+    type Item = Card;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.cards.into_iter()
+    }
+}
+
+impl FromStr for Deck {
+    type Err = failure::Error;
+    fn from_str(s: &str) -> Fallible<Self> {
+        let cards: Fallible<Vec<Card>> = s.chars().map(Card::try_from).collect();
+        Ok(Deck { cards: cards? })
+    }
+}
+
+/// Represents a deck of cards to be used in the game.
+impl Deck {
+    /// A deck with cards in order. Cards are specified by a string
+    /// like 'JJJGGGG' for 3 Jade cards and 4 Gold cards. Thy will be
+    /// dealt from the top to the bottom, from left to right do the
+    /// card positions in the layout.
+    pub fn ordered(descr: &str) -> Fallible<Self> {
+        descr.parse()
+    }
+
+    /// Shuffled deck defined by a specification like 'JJGGGG'.
+    #[allow(unused)]
+    pub fn shuffled(descr: &str) -> Fallible<Self> {
+        let mut deck: Deck = descr.parse()?;
+        deck.shuffle();
+        Ok(deck)
+    }
+
+    /// A standard deck with 4 Jades and 3 Gold cards which are
+    /// randomly shuffled.
+    #[allow(unused)]
+    pub fn seven_shuffled() -> Self {
+        let mut deck = Deck::ordered("jjjjggg").unwrap();
+        deck.shuffle();
+        deck
+    }
+
+    /// A deck with 3 Jades and 3 Gold cards.
+    #[allow(unused)]
+    pub fn six_shuffled() -> Self {
+        let mut deck = Deck::ordered("jjjggg").unwrap();
+        deck.shuffle();
+        deck
+    }
+
+    fn shuffle(&mut self) {
+        let mut rng = rand::thread_rng();
+        self.cards.as_mut_slice().shuffle(&mut rng);
     }
 }
 
@@ -243,9 +299,20 @@ impl UserCoord {
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum Grid {
     Hex,
-
-    #[allow(unused)]
     Square,
+}
+
+#[allow(unused)]
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub enum Layout {
+    /// 3 x 2 layout using square grid. Act 1 in The Rules.
+    Rectangle6,
+    /// 4 + 3 layout using hex grid, as in Act 2, 3 and 4.
+    Bricks7,
+    /// Hex layout for Automa.
+    Hex7,
+    /// Any custom layout.
+    Custom(Grid, HashSet<Coord>),
 }
 
 /// Represents the whole game board: cards at particular positions and
@@ -572,6 +639,38 @@ impl fmt::Display for Player {
     }
 }
 
+/// Representation of a possible game move. Parametrised by a type of
+/// coordinates used (user coordinates or internal ones).
+#[allow(unused)]
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum GameMove<C> {
+    Place(Die, C),
+    Move(Die, C, C),
+    Fight(C),
+    Surprise(C, Coord),
+    Submit,
+}
+
+impl FromStr for GameMove<UserCoord> {
+    type Err = failure::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        parsers::parse_move(s)
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+pub enum ZIndex {
+    Top,
+    Bottom,
+}
+
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub struct FightResult {
+    pub losing_die: Die,
+    pub losing_position: ZIndex,
+}
+
 /// Current game result, can be either won by one of the player or
 /// still in progress.
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
@@ -579,80 +678,6 @@ pub enum GameResult {
     InProgress,
     FirstPlayerWon,
     SecondPlayerWon,
-}
-
-#[allow(unused)]
-
-#[derive(PartialEq, Eq, Debug, Clone)]
-pub enum Layout {
-    /// 3 x 2 layout using square grid. Act 1 in The Rules.
-    Rectangle6,
-    /// 4 + 3 layout using hex grid, as in Act 2, 3 and 4.
-    Bricks7,
-    /// Hex layout for Automa.
-    Hex7,
-    /// Any custom layout.
-    Custom(Grid, HashSet<Coord>),
-}
-
-#[derive(PartialEq, Debug, Clone)]
-pub struct Deck {
-    cards: Vec<Card>,
-}
-
-impl IntoIterator for Deck {
-    type Item = Card;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.cards.into_iter()
-    }
-}
-
-impl FromStr for Deck {
-    type Err = failure::Error;
-    fn from_str(s: &str) -> Fallible<Self> {
-        let cards: Fallible<Vec<Card>> = s.chars().map(Card::try_from).collect();
-        Ok(Deck { cards: cards? })
-    }
-}
-
-#[allow(unused)]
-impl Deck {
-    /// A deck with cards in order. Cards are specified by a string
-    /// like 'JJJGGGG' for 3 Jade cards and 4 Gold cards. Thy will be
-    /// dealt from the top to the bottom, from left to right do the
-    /// card positions in the layout.
-    pub fn ordered(descr: &str) -> Fallible<Self> {
-        descr.parse()
-    }
-
-    /// Shuffled deck defined by a specification like 'JJGGGG'.
-    pub fn shuffled(descr: &str) -> Fallible<Self> {
-        let mut deck: Deck = descr.parse()?;
-        deck.shuffle();
-        Ok(deck)
-    }
-
-    /// A standard deck with 4 Jades and 3 Gold cards which are
-    /// randomly shuffled.
-    pub fn seven_shuffled() -> Self {
-        let mut deck = Deck::ordered("jjjjggg").unwrap();
-        deck.shuffle();
-        deck
-    }
-
-    /// A deck with 3 Jades and 3 Gold cards.
-    pub fn six_shuffled() -> Self {
-        let mut deck = Deck::ordered("jjjggg").unwrap();
-        deck.shuffle();
-        deck
-    }
-
-    fn shuffle(&mut self) {
-        let mut rng = rand::thread_rng();
-        self.cards.as_mut_slice().shuffle(&mut rng);
-    }
 }
 
 /// Represents the whole game state with board, players and additional
@@ -821,7 +846,6 @@ impl Game {
             }
             Submit => Ok(()),
         }
-
     }
 
     /// Applies a move to the current game state.
@@ -952,9 +976,10 @@ impl Game {
             Move(_die, from, to) => {
                 let to_card = self.board.card_at_mut(to).unwrap();
                 let die = match to_card.dice.pop() {
-                    None => {
-                        panic!("Error while undoing {:?}. History: {:?}, Game: {:?}", last_move, self.history, self)
-                    },
+                    None => panic!(
+                        "Error while undoing {:?}. History: {:?}, Game: {:?}",
+                        last_move, self.history, self
+                    ),
                     Some(d) => d,
                 };
 
@@ -1002,7 +1027,6 @@ impl Game {
                 self.result = GameResult::InProgress;
             }
         };
-
     }
 
     /// Caclulates the game result of a particular game state by
@@ -1115,38 +1139,6 @@ impl Game {
 
         Ok(result)
     }
-}
-
-/// Representation of a possible game move. Parametrised by a type of
-/// coordinates used (user coordinates or internal ones).
-#[allow(unused)]
-#[derive(PartialEq, Eq, Debug, Clone, Hash)]
-pub enum GameMove<C> {
-    Place(Die, C),
-    Move(Die, C, C),
-    Fight(C),
-    Surprise(C, Coord),
-    Submit,
-}
-
-impl FromStr for GameMove<UserCoord> {
-    type Err = failure::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        parsers::parse_move(s)
-    }
-}
-
-#[derive(PartialEq, Eq, Debug, Clone)]
-pub struct FightResult {
-    pub losing_die: Die,
-    pub losing_position: ZIndex,
-}
-
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
-pub enum ZIndex {
-    Top,
-    Bottom,
 }
 
 #[cfg(test)]
