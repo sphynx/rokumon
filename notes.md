@@ -2,6 +2,19 @@
 
 This would allow to quickly experiment with different set of rules.
 
+Already done for cards and layouts. Still have to do for GameRules
+(currently just two booleans).
+
+Perhaps Builder pattern can be handy here.
+
+# Make dice in player's stock multisets instead of vectors
+
+We should ignore the order there, since it's not important in the game
+and it will lead to the fact that applying move and then unndoing it
+should be identity operation. However, currently it's not always so,
+since sometimes we put a die back in player's supply in a different
+place. If we ignore the order -- this will be eliminated.
+
 # Provide command line arguments to experiment with the game
 
 May be similar to my Hamisado game:
@@ -38,11 +51,25 @@ too much work.
 `rustyline` looks like a good way to do REPL:
 https://crates.io/crates/rustyline
 
+# Experiment with performance
+
+We already have basic profiling with FlameGraph and dtrace working on
+Mac.
+
+It looks like surprising amount of time is spent in formatting errors
+with formatting macros like `ensure!`.
+
+Also, most of the time (more than 50%) was spent in `validate_move`
+which is the way we generate moves (just generate lots of them and
+then validate if they can actually be made). We may improve on that
+and try to generate good moves in the first place, it may lead to
+small improvements (small because we will still need to check similar
+conditions whether the move is valid or not).
+
 # Implement my own AI (based on alpha-beta pruning)
 
 `rubot` crate seems to be a good fit for the job:
 https://docs.rs/rubot/0.2.0/rubot/trait.Game.html
-
 
 # Implement Automa - an AI from the game rules used for solo play
 
