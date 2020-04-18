@@ -752,6 +752,13 @@ impl Game {
     /// explanation if not valid, otherwise returns ().
     fn validate_move(&self, game_move: &GameMove<Coord>) -> Fallible<()> {
         use GameMove::*;
+
+        ensure!(
+            self.result == GameResult::InProgress,
+            "can't apply move to finished game: {:?}",
+            self
+        );
+
         match game_move {
             Place(die, coord) => {
                 ensure!(
@@ -883,10 +890,11 @@ impl Game {
                 let intermediate_result = self.result();
                 if intermediate_result != GameResult::InProgress {
                     self.result = intermediate_result;
+                    let to_card = self.board.card_at_mut(to).unwrap();
+                    to_card.dice.push(die);
                 } else {
                     let to_card = self.board.card_at_mut(to).unwrap();
                     to_card.dice.push(die);
-
                     self.result = self.result();
                 }
 
