@@ -30,15 +30,6 @@ too much work.
 `rustyline` looks like a good way to do REPL:
 https://crates.io/crates/rustyline
 
-# Parallelise Perft
-
-It should be almost trivial: on depth 1 split the generated moves into
-`ncore` parts, run `perft` on each of those buckets and add numbers
-together.
-
-Will need to understand what's the simplest way to it in Rust, most
-likely `rayon` crate.
-
 # Experiment with performance
 
 We already have basic profiling with FlameGraph and dtrace working on
@@ -151,4 +142,13 @@ We should use `structopt` crate for this.
 
 Move coords, decks and game board logic into separate files, since
 current game.rs is too large.
+
+# DONE Parallelise Perft
+
+It should be almost trivial: on depth 1 split the generated moves into
+`ncore` parts, run `perft` on each of those buckets and add numbers
+together.
+
+Will need to understand what's the simplest way to it in Rust, most
+likely `rayon` crate.
 
