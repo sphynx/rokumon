@@ -64,8 +64,6 @@ impl Display for Opt {
 }
 
 fn main() -> Fallible<()> {
-    println!("Rokumon, v0.1");
-
     let opt = Opt::from_args();
     println!("{}", opt);
 
@@ -81,11 +79,11 @@ fn main() -> Fallible<()> {
             PlayMode::Perft => perft(&mut game, depth)?,
             PlayMode::ParallelPerft => parallel_perft(&game, depth)?,
         };
-        let elapsed_seconds = now.elapsed().as_secs();
+        let elapsed = now.elapsed();
         let ratio = perft as f64 / now.elapsed().as_micros() as f64 * 1e6;
         println!(
-            "perft({}) = {}, elapsed: {}s, {:.0} moves/s",
-            depth, perft, elapsed_seconds, ratio
+            "perft({}): {:9}, time: {:>8} speed: {:.0} moves/s",
+            depth, perft, format!("{:.0?},", elapsed), ratio
         );
     }
 
