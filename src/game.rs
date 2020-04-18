@@ -315,6 +315,20 @@ pub enum Layout {
     Custom(Grid, BTreeSet<Coord>),
 }
 
+impl FromStr for Layout {
+    type Err = failure::Error;
+    fn from_str(s: &str) -> Fallible<Self> {
+        match s {
+            "rectangle6" | "r6"  => Ok(Layout::Rectangle6),
+            "bricks7" | "b7" => Ok(Layout::Bricks7),
+            "hex7" | "h7" => Ok(Layout::Hex7),
+            // TODO: support parsing of custom layouts if needed
+            _ => bail!("can't parse layout: {}", s),
+        }
+    }
+}
+
+
 /// Represents the whole game board: cards at particular positions and
 /// a type of grid used (to make sense of positions).
 #[derive(Debug)]
