@@ -6,22 +6,6 @@ should be identity operation. However, currently it's not always so,
 since sometimes we put a die back in player's supply in a different
 place. If we ignore the order -- this will be eliminated.
 
-# Provide command line arguments to experiment with the game
-
-May be similar to my Hamisado game:
-https://github.com/sphynx/hamisado/blob/master/Hamisado.hs
-
-Useful options:
-
-- play mode (Perft, Play, others)
-- opponents (AIHuman, HumanAI, HumanHuman, AIAI, Analyse)
-- rule variations (--disable-fight-move, --disable-surprise-move)
-- starting position and layout (--cards=JJJGGGG --layout=Brick7), shuffled by default
-- depth used for perft or analysis
-- maybe seed for reproducibility
-
-We should use `structopt` crate for this.
-
 # Better structure
 
 Move coords, decks and game board logic into separate files, since
@@ -50,6 +34,15 @@ too much work.
 
 `rustyline` looks like a good way to do REPL:
 https://crates.io/crates/rustyline
+
+# Parallelise Perft
+
+It should be almost trivial: on depth 1 split the generated moves into
+`ncore` parts, run `perft` on each of those buckets and add numbers
+together.
+
+Will need to understand what's the simplest way to it in Rust, most
+likely `rayon` crate.
 
 # Experiment with performance
 
@@ -142,3 +135,20 @@ Already done for cards and layouts. Still have to do for GameRules
 (currently just two booleans).
 
 Perhaps Builder pattern can be handy here.
+
+# DONE Provide command line arguments to experiment with the game
+
+May be similar to my Hamisado game:
+https://github.com/sphynx/hamisado/blob/master/Hamisado.hs
+
+Useful options:
+
+- play mode (Perft, Play, others)
+- opponents (AIHuman, HumanAI, HumanHuman, AIAI, Analyse)
+- rule variations (--disable-fight-move, --disable-surprise-move)
+- starting position and layout (--cards=JJJGGGG --layout=Brick7), shuffled by default
+- depth used for perft or analysis
+- maybe seed for reproducibility
+
+We should use `structopt` crate for this.
+
