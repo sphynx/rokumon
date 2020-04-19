@@ -79,6 +79,19 @@ impl FromStr for GameMove<UserCoord> {
     }
 }
 
+impl fmt::Display for GameMove<Coord> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use GameMove::*;
+        match self {
+            Place(die, coord) => write!(f, "place {} at {}", die, coord),
+            Move(die, from, to) => write!(f, "move {} from {} to {}", die, from, to),
+            Fight(coord) => write!(f, "fight at {}", coord),
+            Surprise(from, to) => write!(f, "surprise from {} to {}", from, to),
+            Submit => write!(f, "submit"),
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum ZIndex {
     Top,
@@ -314,11 +327,15 @@ impl Game {
 
     /// Applies a move to the current game state.
     pub fn apply_move(&mut self, game_move: &GameMove<Coord>) -> Fallible<Option<FightResult>> {
+        self.validate_move(game_move)?;
+        Ok(self.apply_move_unchecked(game_move))
+    }
+
+    /// Applies a move to the current game state (without validation).
+    pub fn apply_move_unchecked(&mut self, game_move: &GameMove<Coord>) -> Option<FightResult> {
         use GameMove::*;
 
-        self.validate_move(game_move)?;
-
-        let fight_result;
+        let mut fight_result = None;
 
         // Here we consider all moves validated, so we use unwrap
         // freely, even though there might be still be failures
@@ -326,14 +343,13 @@ impl Game {
         match game_move {
             Place(die, coord) => {
                 let player = self.current_player_mut();
-                player.remove_die(&die)?;
+                player.remove_die(&die).unwrap();
 
                 // Add the die to the card.
                 let card = self.board.card_at_mut(coord).unwrap();
                 card.dice.push(die.clone());
 
                 self.result = self.result();
-                fight_result = None;
             }
 
             Move(_die, from, to) => {
@@ -346,16 +362,20 @@ impl Game {
                 // not continue with the rest of the move.
                 let intermediate_result = self.result();
                 if intermediate_result != GameResult::InProgress {
+                    // Set the game result.
                     self.result = intermediate_result;
+
+                    // Continue with the rest of the move (this won't
+                    // affect game result).
                     let to_card = self.board.card_at_mut(to).unwrap();
                     to_card.dice.push(die);
                 } else {
+                    // Finish the second part of the move and then
+                    // update the result.
                     let to_card = self.board.card_at_mut(to).unwrap();
                     to_card.dice.push(die);
                     self.result = self.result();
                 }
-
-                fight_result = None;
             }
 
             Fight(place) => {
@@ -394,7 +414,6 @@ impl Game {
                 }
 
                 self.result = self.result();
-                fight_result = None;
             }
 
             Submit => {
@@ -403,14 +422,13 @@ impl Game {
                 } else {
                     self.result = GameResult::FirstPlayerWon;
                 }
-                fight_result = None;
             }
         };
 
         self.player1_moves = !self.player1_moves;
         self.history.push(game_move.clone());
 
-        Ok(fight_result)
+        fight_result
     }
 
     pub fn undo_move(&mut self, game_move: &GameMove<Coord>, fight_result: Option<FightResult>) {

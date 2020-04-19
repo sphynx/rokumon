@@ -1,8 +1,3 @@
-# Implement my own AI (based on alpha-beta pruning)
-
-`rubot` crate seems to be a good fit for the job:
-https://docs.rs/rubot/0.2.0/rubot/trait.Game.html
-
 # Make dice in player's stock multisets instead of vectors
 
 We should ignore the order there, since it's not important in the game
@@ -167,4 +162,9 @@ together.
 
 Will need to understand what's the simplest way to it in Rust, most
 likely `rayon` crate.
+
+# DONE Implement my own AI (based on alpha-beta pruning)
+
+`rubot` crate seems to be a good fit for the job:
+https://docs.rs/rubot/0.2.0/rubot/trait.Game.html
 

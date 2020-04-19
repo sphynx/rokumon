@@ -6,14 +6,16 @@ mod game;
 mod parsers;
 mod perft;
 
+use ai::Opponent;
 use board::Layout;
 use card::Deck;
 use failure::{bail, Fallible};
 use game::{Game, Rules};
 use perft::*;
+use rubot::Depth;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use structopt::StructOpt;
 
 #[derive(Debug)]
@@ -31,17 +33,42 @@ impl FromStr for Mode {
             "perft" => Ok(Perft),
             "par_perft" => Ok(ParallelPerft),
             "play" => Ok(Play),
-            _ => bail!("can't parse play mode: {}", s),
+            _ => bail!("Can't parse play mode: {}", s),
+        }
+    }
+}
+
+#[derive(Debug)]
+enum Opponents {
+    HumanHuman,
+    HumanAI,
+    AIHuman,
+    AIAI,
+}
+
+impl FromStr for Opponents {
+    type Err = failure::Error;
+    fn from_str(s: &str) -> Fallible<Self> {
+        use Opponents::*;
+        match s.to_lowercase().as_str() {
+            "humanhuman" => Ok(HumanHuman),
+            "humanai" => Ok(HumanAI),
+            "aihuman" => Ok(AIHuman),
+            "aiai" => Ok(AIAI),
+            _ => bail!("Can't parse opponents specification: {}", s),
         }
     }
 }
 
 #[derive(Debug, StructOpt)]
 struct Opt {
-    #[structopt(short, long, default_value = "perft")]
+    #[structopt(short, long, default_value = "play", help = "perft | par_perft | play")]
     mode: Mode,
 
-    #[structopt(short, long)]
+    #[structopt(short, long, default_value = "AIAI", help = "HumanHuman | HumanAI | AIHuman | AIAI")]
+    opponents: Opponents,
+
+    #[structopt(short, long, default_value = "5")]
     depth: usize,
 
     #[structopt(long, default_value = "gggjjjj")]
@@ -61,8 +88,14 @@ impl Display for Opt {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "Options: depth={}, mode={:?}, cards={:?}, layout={:?}, with_fight={}, with_surprise={}",
-            self.depth, self.mode, self.cards, self.layout, self.enable_fight_move, self.enable_surprise_move
+            "Options: depth={}, mode={:?}, opponents={:?}, cards={:?}, layout={:?}, with_fight={}, with_surprise={}",
+            self.depth,
+            self.mode,
+            self.opponents,
+            self.cards,
+            self.layout,
+            self.enable_fight_move,
+            self.enable_surprise_move
         )
     }
 }
@@ -78,14 +111,33 @@ fn main() -> Fallible<()> {
     let mut game = Game::new(Layout::Bricks7, deck, rules);
 
     match &opt.mode {
-        Mode::Play => ai::play_game(game),
+        Mode::Play => match opt.opponents {
+            Opponents::HumanHuman => ai::play_game::<Depth>(game, Opponent::Human, Opponent::Human),
+            Opponents::HumanAI => {
+                let condition = Duration::from_secs(3);
+                let ai2 = Opponent::new_ai(false, &condition);
+                ai::play_game(game, Opponent::Human, ai2);
+            }
+            Opponents::AIHuman => {
+                let condition = Duration::from_secs(3);
+                let ai1 = Opponent::new_ai(true, &condition);
+                ai::play_game(game, ai1, Opponent::Human);
+            }
+
+            Opponents::AIAI => {
+                let condition = Duration::from_secs(3);
+                let ai1 = Opponent::new_ai(true, &condition);
+                let ai2 = Opponent::new_ai(false, &condition);
+                ai::play_game(game, ai1, ai2);
+            }
+        },
 
         Mode::Perft | Mode::ParallelPerft => {
             for depth in 1..=max_depth {
                 let now = Instant::now();
                 let perft = match &opt.mode {
-                    Mode::Perft => perft(&mut game, depth)?,
-                    Mode::ParallelPerft => parallel_perft(&game, depth)?,
+                    Mode::Perft => perft(&mut game, depth),
+                    Mode::ParallelPerft => parallel_perft(&game, depth),
                     _ => unreachable!(),
                 };
                 let elapsed = now.elapsed();

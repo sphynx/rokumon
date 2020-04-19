@@ -26,7 +26,7 @@ pub struct Coord {
 
 impl fmt::Display for Coord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({}, {}, {})", self.x, self.y, self.z)
+        write!(f, "<{}, {}, {}>", self.x, self.y, self.z)
     }
 }
 
