@@ -135,10 +135,10 @@ pub struct Game {
     rules: Rules,
     player1: Player,
     player2: Player,
-    player1_moves: bool,
+    pub player1_moves: bool,
     player1_surprises: u8,
     player2_surprises: u8,
-    result: GameResult,
+    pub result: GameResult,
     history: Vec<GameMove<Coord>>,
 }
 
@@ -529,13 +529,19 @@ impl Game {
     #[allow(unused)]
     pub fn apply_move_str(&mut self, move_str: &str) -> Fallible<Option<FightResult>> {
         let user_move = move_str.parse()?;
-        let converted_move = self.board.convert_move_coords(&user_move)?;
+        let converted_move = self.convert_move_coords(&user_move)?;
         self.apply_move(&converted_move)
+    }
+
+    /// Convert move coordinates from `UserCoord` to `Coord`.
+    pub fn convert_move_coords(&self, m: &GameMove<UserCoord>) -> Fallible<GameMove<Coord>> {
+        self.board.convert_move_coords(m)
     }
 
     // Note: The move generator is supposed to be fast, but now I'm
     // generating moves in a rather naive way. This is an obvious
     // candidate for optimization, if we need any.
+    /// Generate all legal moves for current game position.
     pub fn generate_moves(&self) -> Vec<GameMove<Coord>> {
         if self.result != GameResult::InProgress {
             return vec![];
@@ -588,6 +594,11 @@ impl Game {
         // We don't include Submit as a candidate move ;)
 
         moves.into_iter().collect()
+    }
+
+    /// Returns if the game is over.
+    pub fn is_game_over(&self) -> bool {
+        self.result != GameResult::InProgress
     }
 }
 

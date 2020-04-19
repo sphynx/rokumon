@@ -1,3 +1,4 @@
+mod ai;
 mod board;
 mod card;
 mod coord;
@@ -16,17 +17,20 @@ use std::time::Instant;
 use structopt::StructOpt;
 
 #[derive(Debug)]
-enum PlayMode {
+enum Mode {
     Perft,
     ParallelPerft,
+    Play,
 }
 
-impl FromStr for PlayMode {
+impl FromStr for Mode {
     type Err = failure::Error;
     fn from_str(s: &str) -> Fallible<Self> {
+        use Mode::*;
         match s.to_lowercase().as_str() {
-            "perft" => Ok(PlayMode::Perft),
-            "par_perft" => Ok(PlayMode::ParallelPerft),
+            "perft" => Ok(Perft),
+            "par_perft" => Ok(ParallelPerft),
+            "play" => Ok(Play),
             _ => bail!("can't parse play mode: {}", s),
         }
     }
@@ -35,7 +39,7 @@ impl FromStr for PlayMode {
 #[derive(Debug, StructOpt)]
 struct Opt {
     #[structopt(short, long, default_value = "perft")]
-    mode: PlayMode,
+    mode: Mode,
 
     #[structopt(short, long)]
     depth: usize,
@@ -73,18 +77,28 @@ fn main() -> Fallible<()> {
 
     let mut game = Game::new(Layout::Bricks7, deck, rules);
 
-    for depth in 1..=max_depth {
-        let now = Instant::now();
-        let perft = match opt.mode {
-            PlayMode::Perft => perft(&mut game, depth)?,
-            PlayMode::ParallelPerft => parallel_perft(&game, depth)?,
-        };
-        let elapsed = now.elapsed();
-        let ratio = perft as f64 / now.elapsed().as_micros() as f64 * 1e6;
-        println!(
-            "perft({}): {:9}, time: {:>8} speed: {:.0} moves/s",
-            depth, perft, format!("{:.0?},", elapsed), ratio
-        );
+    match &opt.mode {
+        Mode::Play => ai::play_game(game),
+
+        Mode::Perft | Mode::ParallelPerft => {
+            for depth in 1..=max_depth {
+                let now = Instant::now();
+                let perft = match &opt.mode {
+                    Mode::Perft => perft(&mut game, depth)?,
+                    Mode::ParallelPerft => parallel_perft(&game, depth)?,
+                    _ => unreachable!(),
+                };
+                let elapsed = now.elapsed();
+                let ratio = perft as f64 / now.elapsed().as_micros() as f64 * 1e6;
+                println!(
+                    "perft({}): {:9}, time: {:>8} speed: {:.0} moves/s",
+                    depth,
+                    perft,
+                    format!("{:.0?},", elapsed),
+                    ratio
+                );
+            }
+        }
     }
 
     Ok(())

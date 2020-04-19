@@ -401,8 +401,15 @@ dependencies = [
  "nom",
  "rand",
  "rayon",
+ "rubot",
  "structopt",
 ]
+
+[[package]]
+name = "rubot"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2e8d1b78fec74de0558433a1ef2805791f3abb6ebad292196f88a47fa1c91f9"
 
 [[package]]
 name = "rustc-demangle"
