@@ -1,3 +1,8 @@
+# Implement my own AI (based on alpha-beta pruning)
+
+`rubot` crate seems to be a good fit for the job:
+https://docs.rs/rubot/0.2.0/rubot/trait.Game.html
+
 # Make dice in player's stock multisets instead of vectors
 
 We should ignore the order there, since it's not important in the game
@@ -50,10 +55,21 @@ conditions whether the move is valid or not).
 Which can help us with choosing data structures and quickly seeing
 effects of various changes.
 
-# Implement my own AI (based on alpha-beta pruning)
+# Take a look at fuzzing tests
 
-`rubot` crate seems to be a good fit for the job:
-https://docs.rs/rubot/0.2.0/rubot/trait.Game.html
+`cargo fuzz` seems to be a way to go.
+
+See also how fuzzing is done in `rubot`:
+https://github.com/lcnr/rubot/tree/master/fuzz
+
+https://rust-fuzz.github.io/book/cargo-fuzz.html
+
+# See how perft is done in `shakmaty`
+
+https://github.com/niklasf/shakmaty/blob/master/src/perft.rs
+
+Perhaps I can learn something from there or contribute a parallel
+perft implementation to `shakmaty`
 
 # Implement Automa - an AI from the game rules used for solo play
 
