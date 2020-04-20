@@ -1,24 +1,24 @@
-Options: depth=7, mode=Perft, cards="gggjjjj", layout=Bricks7, with_fight=false, with_surprise=false
-perft(1):        21, time:    10µs, speed: 1235294 moves/s
-perft(2):       504, time:    81µs, speed: 6300000 moves/s
-perft(3):      7608, time:     2ms, speed: 3798303 moves/s
-perft(4):    130512, time:    35ms, speed: 3749806 moves/s
-perft(5):   1636740, time:   677ms, speed: 2417615 moves/s
-perft(6):  22734840, time:      9s, speed: 2520767 moves/s
-perft(7): 246953592, time:    131s, speed: 1888895 moves/s
+Options: depth=7, mode=Perft, opponents=AIAI, cards="gggjjjj", layout=Bricks7, with_fight=false, with_surprise=false
+perft(1):        21, time:    11µs, speed: 1050000 moves/s
+perft(2):       504, time:    46µs, speed: 10956522 moves/s
+perft(3):      7608, time:     1ms, speed: 5137070 moves/s
+perft(4):    130512, time:    23ms, speed: 5656972 moves/s
+perft(5):   1636740, time:   517ms, speed: 3167177 moves/s
+perft(6):  22734840, time:      7s, speed: 3476309 moves/s
+perft(7): 246953592, time:     99s, speed: 2506093 moves/s
 
-Options: depth=7, mode=ParallelPerft, cards="gggjjjj", layout=Bricks7, with_fight=false, with_surprise=false
-perft(1):        21, time:    10µs, speed: 1235294 moves/s
-perft(2):       504, time:   493µs, speed: 1022312 moves/s
-perft(3):      7608, time:     1ms, speed: 7123596 moves/s
-perft(4):    130512, time:    15ms, speed: 8881388 moves/s
-perft(5):   1636740, time:   226ms, speed: 7253767 moves/s
-perft(6):  22734840, time:      3s, speed: 8010398 moves/s
-perft(7): 246953592, time:     48s, speed: 5166350 moves/s
+Options: depth=7, mode=ParallelPerft, opponents=AIAI, cards="gggjjjj", layout=Bricks7, with_fight=false, with_surprise=false
+perft(1):        21, time:     7µs, speed: 1500000 moves/s
+perft(2):       504, time:   474µs, speed: 1063291 moves/s
+perft(3):      7608, time:   741µs, speed: 10281081 moves/s
+perft(4):    130512, time:    10ms, speed: 13620539 moves/s
+perft(5):   1636740, time:   198ms, speed: 8259397 moves/s
+perft(6):  22734840, time:      2s, speed: 10252122 moves/s
+perft(7): 246953592, time:     38s, speed: 6566955 moves/s
 
-Options: depth=5, mode=ParallelPerft, cards="gggjjjj", layout=Bricks7, with_fight=true, with_surprise=true
-perft(1):        56, time:   112µs, speed: 462810 moves/s
-perft(2):      3422, time:     2ms, speed: 1494976 moves/s
-perft(3):    106224, time:    32ms, speed: 3331786 moves/s
-perft(4):   3782868, time:      1s, speed: 3718402 moves/s
-perft(5):  77797812, time:     23s, speed: 3443339 moves/s
+Options: depth=5, mode=ParallelPerft, opponents=AIAI, cards="gggjjjj", layout=Bricks7, with_fight=true, with_surprise=true
+perft(1):        56, time:    84µs, speed: 615385 moves/s
+perft(2):      3422, time:     2ms, speed: 2089133 moves/s
+perft(3):    106224, time:    29ms, speed: 3672013 moves/s
+perft(4):   3782868, time:   871ms, speed: 4344638 moves/s
+perft(5):  77797812, time:     18s, speed: 4398793 moves/s

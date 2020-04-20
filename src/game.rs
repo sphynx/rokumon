@@ -565,11 +565,12 @@ impl Game {
             return vec![];
         }
 
-        let mut moves: BTreeSet<GameMove<Coord>> = BTreeSet::new();
-        let stock = &self.current_player().dice;
+        let mut moves = Vec::with_capacity(32);
+
+        let dice: BTreeSet<Die> = self.current_player().dice.iter().cloned().collect();
         for (&coord, _card) in self.board.empty_cards_iter() {
-            for d in stock {
-                moves.insert(GameMove::Place(d.clone(), coord));
+            for d in dice.iter() {
+                moves.push(GameMove::Place(d.clone(), coord));
             }
         }
 
@@ -579,7 +580,7 @@ impl Game {
             for to in &all_positions {
                 let candidate = GameMove::Move(die.clone(), *from, **to);
                 if self.validate_move(&candidate).is_ok() {
-                    moves.insert(candidate);
+                    moves.push(candidate);
                 }
             }
         }
@@ -588,7 +589,7 @@ impl Game {
             for (&pos, _) in self.board.cards.iter().filter(|(_, card)| card.dice.len() > 1) {
                 let candidate = GameMove::Fight(pos);
                 if self.validate_move(&candidate).is_ok() {
-                    moves.insert(candidate);
+                    moves.push(candidate);
                 }
             }
         }
@@ -601,7 +602,7 @@ impl Game {
                         for y in top - 1..=bottom + 1 {
                             let candidate = GameMove::Surprise(from, self.board.new_coord(x, y));
                             if self.validate_move(&candidate).is_ok() {
-                                moves.insert(candidate);
+                                moves.push(candidate);
                             }
                         }
                     }
@@ -610,8 +611,7 @@ impl Game {
         }
 
         // We don't include Submit as a candidate move ;)
-
-        moves.into_iter().collect()
+        moves
     }
 
     /// Returns if the game is over.
