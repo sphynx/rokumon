@@ -17,21 +17,36 @@ pub struct Player {
 }
 
 impl Player {
-    fn first() -> Self {
+    fn first(rules: &Rules) -> Self {
         use DiceColor::*;
         let d = Die::new;
+
+        let dice = if rules.enable_fight_move {
+            vec![d(Red, 2), d(Red, 2), d(Red, 4), d(Red, 6)]
+        } else {
+            // No difference then, just generate 4 equal dice.
+            vec![d(Red, 2); 4]
+        };
+
         Player {
             name: String::from("Player 1"),
-            dice: vec![d(Red, 2), d(Red, 2), d(Red, 4), d(Red, 6)],
+            dice,
         }
     }
 
-    fn second() -> Self {
+    fn second(rules: &Rules) -> Self {
         use DiceColor::*;
         let d = Die::new;
+        let dice = if rules.enable_fight_move {
+            vec![d(Black, 1), d(Black, 3), d(Black, 3), d(Black, 5), d(White, 1)]
+        } else {
+            // No difference then, just generate 5 equal dice.
+            vec![d(Black, 1); 5]
+        };
+
         Player {
             name: String::from("Player 2"),
-            dice: vec![d(Black, 1), d(Black, 3), d(Black, 3), d(Black, 5), d(White, 1)],
+            dice
         }
     }
 
@@ -175,8 +190,8 @@ impl Game {
         Game {
             board: Board::new(layout, deck),
             rules,
-            player1: Player::first(),
-            player2: Player::second(),
+            player1: Player::first(&rules),
+            player2: Player::second(&rules),
             player1_moves: true,
             player1_surprises: 0,
             player2_surprises: 0,
