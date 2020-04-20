@@ -12,7 +12,7 @@ use card::Deck;
 use failure::{bail, Fallible};
 use game::{Game, Rules};
 use perft::*;
-use rubot::Depth;
+use rubot::{Depth, ToCompletion};
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
@@ -44,6 +44,7 @@ enum Opponents {
     HumanAI,
     AIHuman,
     AIAI,
+    Analyse
 }
 
 impl FromStr for Opponents {
@@ -55,6 +56,7 @@ impl FromStr for Opponents {
             "humanai" => Ok(HumanAI),
             "aihuman" => Ok(AIHuman),
             "aiai" => Ok(AIAI),
+            "analyse" | "analyze" => Ok(Analyse),
             _ => bail!("Can't parse opponents specification: {}", s),
         }
     }
@@ -112,6 +114,14 @@ fn main() -> Fallible<()> {
 
     match &opt.mode {
         Mode::Play => match opt.opponents {
+            Opponents::Analyse => {
+                game.apply_move_str("place r2 at r2c2")?;
+                game.apply_move_str("place b1 at r2c3")?;
+                game.apply_move_str("place r2 at r1c2")?;
+                println!("Analysing this position: {}", &game);
+                let ai = Opponent::new_ai(false, &ToCompletion);
+                ai::play_game(game, Opponent::Human, ai);
+            }
             Opponents::HumanHuman => ai::play_game::<Depth>(game, Opponent::Human, Opponent::Human),
             Opponents::HumanAI => {
                 let condition = Duration::from_secs(3);
@@ -125,7 +135,7 @@ fn main() -> Fallible<()> {
             }
 
             Opponents::AIAI => {
-                let condition = Duration::from_secs(3);
+                let condition = Duration::from_secs(60);
                 let ai1 = Opponent::new_ai(true, &condition);
                 let ai2 = Opponent::new_ai(false, &condition);
                 ai::play_game(game, ai1, ai2);
