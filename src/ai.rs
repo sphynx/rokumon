@@ -53,6 +53,7 @@ impl rubot::Game for Game {
 
 pub enum Opponent<T: IntoRunCondition + Clone> {
     Human,
+    Random,
     AI(Bot<Game>, T),
 }
 
@@ -64,6 +65,7 @@ impl<T: IntoRunCondition + Clone> Opponent<T> {
     pub fn get_move(&mut self, game: &Game) -> GameMove<Coord> {
         match self {
             Opponent::Human => Self::get_human_move(game),
+            Opponent::Random => game.random_move(),
             Opponent::AI(bot, cond) => {
                 let mut logger = Logger::new(cond.clone());
                 let res = bot.select(&game, &mut logger).unwrap();
@@ -124,11 +126,12 @@ where
     }
 
     println!(
-        "Game over, {} player won",
+        "Game over, {} player won, {} moves",
         if game.result == GameResult::FirstPlayerWon {
             "first"
         } else {
             "second"
-        }
+        },
+        game.history.len()
     );
 }

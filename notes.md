@@ -10,17 +10,6 @@ place. If we ignore the order -- this will be eliminated.
 
 Generate an SVG image or something.
 
-# Add a mode to play random games
-
-This we can explore the game tree in depth, perhaps it will be useful
-for exposing certain move generator bugs.
-
-Also, it can help answer interesting questions about expected length
-of random game, who is expected to win it, etc.
-
-We can also experiment with different distributions, but for start the
-uniform distribution over all possible moves should be fine.
-
 # Provide a REPL for actually playing the game
 
 Perhaps we will need to have some better text UI for that. Not sure
@@ -167,4 +156,15 @@ likely `rayon` crate.
 
 `rubot` crate seems to be a good fit for the job:
 https://docs.rs/rubot/0.2.0/rubot/trait.Game.html
+
+# DONE Add a mode to play random games
+
+This we can explore the game tree in depth, perhaps it will be useful
+for exposing certain move generator bugs.
+
+Also, it can help answer interesting questions about expected length
+of random game, who is expected to win it, etc.
+
+We can also experiment with different distributions, but for start the
+uniform distribution over all possible moves should be fine.
 

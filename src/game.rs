@@ -1,3 +1,4 @@
+use rand::seq::SliceRandom;
 use std::collections::BTreeSet;
 use std::fmt;
 use std::str::FromStr;
@@ -46,7 +47,7 @@ impl Player {
 
         Player {
             name: String::from("Player 2"),
-            dice
+            dice,
         }
     }
 
@@ -167,7 +168,7 @@ pub struct Game {
     player1_surprises: u8,
     player2_surprises: u8,
     pub result: GameResult,
-    history: Vec<GameMove<Coord>>,
+    pub history: Vec<GameMove<Coord>>,
 }
 
 impl fmt::Display for Game {
@@ -569,6 +570,17 @@ impl Game {
     /// Convert move coordinates from `UserCoord` to `Coord`.
     pub fn convert_move_coords(&self, m: &GameMove<UserCoord>) -> Fallible<GameMove<Coord>> {
         self.board.convert_move_coords(m)
+    }
+
+    pub fn random_move(&self) -> GameMove<Coord> {
+        let moves = self.generate_moves();
+        let mut rng = rand::thread_rng();
+        moves.choose(&mut rng).unwrap().clone()
+    }
+
+    /// Make random move (uniform distribution).
+    pub fn make_random_move(&mut self) {
+        self.apply_move_unchecked(&self.random_move());
     }
 
     // Note: The move generator is supposed to be fast, but now I'm

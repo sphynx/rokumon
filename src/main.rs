@@ -44,7 +44,8 @@ enum Opponents {
     HumanAI,
     AIHuman,
     AIAI,
-    Analyse
+    RandomRandom,
+    Analyse,
 }
 
 impl FromStr for Opponents {
@@ -56,6 +57,7 @@ impl FromStr for Opponents {
             "humanai" => Ok(HumanAI),
             "aihuman" => Ok(AIHuman),
             "aiai" => Ok(AIAI),
+            "rr" | "randomrandom" => Ok(RandomRandom),
             "analyse" | "analyze" => Ok(Analyse),
             _ => bail!("Can't parse opponents specification: {}", s),
         }
@@ -114,10 +116,15 @@ fn main() -> Fallible<()> {
 
     match &opt.mode {
         Mode::Play => match opt.opponents {
+            Opponents::RandomRandom => ai::play_game::<Depth>(game, Opponent::Random, Opponent::Random),
             Opponents::Analyse => {
                 game.apply_move_str("place r2 at r2c2")?;
                 game.apply_move_str("place b1 at r2c3")?;
                 game.apply_move_str("place r2 at r1c2")?;
+                game.make_random_move();
+                game.make_random_move();
+                game.make_random_move();
+                game.make_random_move();
                 println!("Analysing this position: {}", &game);
                 let ai = Opponent::new_ai(false, &ToCompletion);
                 ai::play_game(game, Opponent::Human, ai);
