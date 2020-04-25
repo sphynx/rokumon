@@ -160,7 +160,7 @@ impl Rules {
 /// the game result).
 #[derive(Debug, Clone)]
 pub struct Game {
-    board: Board,
+    pub board: Board,
     rules: Rules,
     player1: Player,
     player2: Player,
@@ -572,6 +572,7 @@ impl Game {
         self.board.convert_move_coords(m)
     }
 
+    /// Returns a random move (uniform distribution).
     pub fn random_move(&self) -> GameMove<Coord> {
         let moves = self.generate_moves();
         let mut rng = rand::thread_rng();
@@ -645,6 +646,8 @@ impl Game {
     pub fn is_game_over(&self) -> bool {
         self.result != GameResult::InProgress
     }
+
+
 }
 
 #[cfg(test)]

@@ -169,9 +169,15 @@ impl Board {
         self.row_iter(row).map(|(_, card)| card)
     }
 
-    /// Iterator over all cards in arbitrary order.
+    /// Iterator over all cards (in arbitrary order).
     pub fn cards_iter(&self) -> impl Iterator<Item = &Card> {
         self.cards.values()
+    }
+
+    /// Iterator over all cards along with their coordinates (in
+    /// arbitrary order).
+    pub fn coord_cards_iter(&self) -> impl Iterator<Item = (&Coord, &Card)> {
+        self.cards.iter()
     }
 
     /// Positions of cards from given `row` (`y` coordinate) ordered
@@ -212,10 +218,10 @@ impl Board {
 
     /// Iterates over active dice (i.e. dice on cards which are not
     /// covered by other dice).
-    pub fn active_dice_iter(&self, player1_moves: bool) -> impl Iterator<Item = (&Coord, &Die)> {
+    pub fn active_dice_iter(&self, for_player1: bool) -> impl Iterator<Item = (&Coord, &Die)> {
         self.cards.iter().filter_map(move |(coord, card)| {
             card.top_die().and_then(move |d| {
-                if d.belongs_to_player1() == player1_moves {
+                if d.belongs_to_player1() == for_player1 {
                     Some((coord, d))
                 } else {
                     None
@@ -290,6 +296,13 @@ impl Board {
         }
 
         result
+    }
+
+    pub fn num_of_adjacent_triples(&self, c: Coord) -> usize {
+        self.adj_triples
+            .iter()
+            .map(|t| if c == t.0 || c == t.1 || c == t.2 { 1 } else { 0 })
+            .sum()
     }
 
     /// Manhattan distance on hex and square grids.
