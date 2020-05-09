@@ -8,6 +8,7 @@ mod perft;
 mod play;
 mod strategy;
 
+use ai::AlphaBetaAI;
 use board::Layout;
 use card::Deck;
 use failure::{bail, Fallible};
@@ -16,7 +17,7 @@ use perft::*;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 use std::time::Instant;
-use strategy::{AlphaBetaAI, Human, RandomAI};
+use strategy::{Human, RandomAI};
 use structopt::StructOpt;
 
 #[derive(Debug)]
