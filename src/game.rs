@@ -579,11 +579,6 @@ impl Game {
         moves.choose(&mut rng).unwrap().clone()
     }
 
-    /// Make random move (uniform distribution).
-    pub fn make_random_move(&mut self) {
-        self.apply_move_unchecked(&self.random_move());
-    }
-
     // Note: The move generator is supposed to be fast, but now I'm
     // generating moves in a rather naive way. This is an obvious
     // candidate for optimization, if we need any.
@@ -646,8 +641,6 @@ impl Game {
     pub fn is_game_over(&self) -> bool {
         self.result != GameResult::InProgress
     }
-
-
 }
 
 #[cfg(test)]

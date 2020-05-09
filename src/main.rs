@@ -5,17 +5,18 @@ mod coord;
 mod game;
 mod parsers;
 mod perft;
+mod play;
+mod strategy;
 
-use ai::Opponent;
 use board::Layout;
 use card::Deck;
 use failure::{bail, Fallible};
 use game::{Game, Rules};
 use perft::*;
-use rubot::{Depth, ToCompletion};
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
-use std::time::{Duration, Instant};
+use std::time::Instant;
+use strategy::{AlphaBetaAI, Human, RandomAI};
 use structopt::StructOpt;
 
 #[derive(Debug)]
@@ -45,7 +46,7 @@ enum Opponents {
     AIHuman,
     AIAI,
     RandomRandom,
-    Analyse,
+    //    Analyse,
 }
 
 impl FromStr for Opponents {
@@ -58,7 +59,7 @@ impl FromStr for Opponents {
             "aihuman" => Ok(AIHuman),
             "aiai" => Ok(AIAI),
             "rr" | "randomrandom" => Ok(RandomRandom),
-            "analyse" | "analyze" => Ok(Analyse),
+            //            "analyse" | "analyze" => Ok(Analyse),
             _ => bail!("Can't parse opponents specification: {}", s),
         }
     }
@@ -69,7 +70,12 @@ struct Opt {
     #[structopt(short, long, default_value = "play", help = "perft | par_perft | play")]
     mode: Mode,
 
-    #[structopt(short, long, default_value = "AIAI", help = "HumanHuman | HumanAI | AIHuman | AIAI")]
+    #[structopt(
+        short,
+        long,
+        default_value = "RR",
+        help = "HumanHuman | HumanAI | AIHuman | AIAI | RR"
+    )]
     opponents: Opponents,
 
     #[structopt(short, long, default_value = "5")]
@@ -116,37 +122,11 @@ fn main() -> Fallible<()> {
 
     match &opt.mode {
         Mode::Play => match opt.opponents {
-            Opponents::RandomRandom => ai::play_game::<Depth>(game, Opponent::Random, Opponent::Random),
-            Opponents::Analyse => {
-                game.apply_move_str("place r2 at r2c2")?;
-                game.apply_move_str("place b1 at r2c3")?;
-                game.apply_move_str("place r2 at r1c2")?;
-                game.make_random_move();
-                game.make_random_move();
-                game.make_random_move();
-                game.make_random_move();
-                println!("Analysing this position: {}", &game);
-                let ai = Opponent::new_ai(false, &ToCompletion);
-                ai::play_game(game, Opponent::Human, ai);
-            }
-            Opponents::HumanHuman => ai::play_game::<Depth>(game, Opponent::Human, Opponent::Human),
-            Opponents::HumanAI => {
-                let condition = Duration::from_secs(3);
-                let ai2 = Opponent::new_ai(false, &condition);
-                ai::play_game(game, Opponent::Human, ai2);
-            }
-            Opponents::AIHuman => {
-                let condition = Duration::from_secs(3);
-                let ai1 = Opponent::new_ai(true, &condition);
-                ai::play_game(game, ai1, Opponent::Human);
-            }
-
-            Opponents::AIAI => {
-                let condition = Duration::from_secs(60);
-                let ai1 = Opponent::new_ai(true, &condition);
-                let ai2 = Opponent::new_ai(false, &condition);
-                ai::play_game(game, ai1, ai2);
-            }
+            Opponents::HumanHuman => play::play_game(game, Human, Human),
+            Opponents::RandomRandom => play::play_game(game, RandomAI, RandomAI),
+            Opponents::HumanAI => play::play_game(game, Human, AlphaBetaAI::new(false, 3)),
+            Opponents::AIHuman => play::play_game(game, AlphaBetaAI::new(true, 3), Human),
+            Opponents::AIAI => play::play_game(game, AlphaBetaAI::new(true, 3), AlphaBetaAI::new(false, 3)),
         },
 
         Mode::Perft | Mode::ParallelPerft => {
