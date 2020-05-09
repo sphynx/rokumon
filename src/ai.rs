@@ -20,38 +20,19 @@ impl rubot::Game for Game {
 
     fn execute(&mut self, action: &Self::Action, player: Self::Player) -> Self::Fitness {
         self.apply_move_unchecked(action);
-
-        match self.result {
-            GameResult::FirstPlayerWon => {
-                if player {
-                    i32::MAX
-                } else {
-                    i32::MIN
-                }
+        let eval = evaluate(self);
+        if player {
+            eval
+        } else {
+            if eval == i32::MAX {
+                i32::MIN
+            } else if eval == i32::MIN {
+                i32::MAX
+            } else {
+                -eval
             }
-            GameResult::SecondPlayerWon => {
-                if player {
-                    i32::MIN
-                } else {
-                    i32::MAX
-                }
-            }
-            GameResult::InProgress => 0,
         }
     }
-    //     let eval = evaluate(self);
-    //     if player {
-    //         eval
-    //     } else {
-    //         if eval == i32::MAX {
-    //             i32::MIN
-    //         } else if eval == i32::MIN {
-    //             i32::MAX
-    //         } else {
-    //             -eval
-    //         }
-    //     }
-    // }
 
     #[inline]
     fn is_upper_bound(&self, fitness: Self::Fitness, _player: Self::Player) -> bool {
@@ -64,7 +45,6 @@ impl rubot::Game for Game {
     }
 }
 
-/*
 fn evaluate(game: &Game) -> i32 {
     match game.result {
         GameResult::FirstPlayerWon => std::i32::MAX,
@@ -99,7 +79,6 @@ fn evaluate(game: &Game) -> i32 {
         }
     }
 }
-*/
 
 pub struct AlphaBetaAI {
     duration: u64,
@@ -173,7 +152,7 @@ impl Strategy for AlphaBetaAI {
                     .max_by_key(|(_coord, n)| *n)
                     .unwrap();
 
-                return GameMove::Place(Die::new(DiceColor::Black, 1), coord.0);
+                return GameMove::Place(Die::new(DiceColor::Black, 5), coord.0);
             }
             _ => {
                 // Now just run alpha-beta.

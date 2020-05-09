@@ -2,6 +2,8 @@ use crate::coord::Coord;
 use crate::game::{Game, GameMove};
 use crate::parsers;
 
+use crate::ai::AlphaBetaAI;
+
 use std::io;
 
 pub trait Strategy {
@@ -20,12 +22,20 @@ impl Strategy for Human {
         loop {
             let mut input = String::new();
             io::stdin().read_line(&mut input).expect("Failed to read input");
-            match parsers::parse_move(input.trim_end()) {
-                Ok(mov) => match game.convert_move_coords(&mov) {
-                    Ok(m) => break m,
-                    Err(_) => println!("Invalid user coordinate. Please try again:"),
-                },
-                Err(_) => println!("Can't parse move. Please try again:"),
+
+            if input.trim_end() == "hint" {
+                println!("Running AI for hint...");
+                let mut ai = AlphaBetaAI::with_duration(game.player1_moves, 10);
+                let m = ai.get_move(game);
+                println!("AI recommends: {}", m);
+            } else {
+                match parsers::parse_move(input.trim_end()) {
+                    Ok(mov) => match game.convert_move_coords(&mov) {
+                        Ok(m) => break m,
+                        Err(_) => println!("Invalid user coordinate. Please try again:"),
+                    },
+                    Err(_) => println!("Can't parse move. Please try again:"),
+                }
             }
         }
     }
@@ -38,4 +48,3 @@ impl Strategy for RandomAI {
         game.random_move()
     }
 }
-
