@@ -23,9 +23,14 @@ impl Strategy for Human {
             let mut input = String::new();
             io::stdin().read_line(&mut input).expect("Failed to read input");
 
-            if input.trim_end() == "hint" {
+            if input.trim_end().starts_with("hint") {
                 println!("Running AI for hint...");
-                let mut ai = AlphaBetaAI::with_duration(game.player1_moves, 10);
+                let parts: Vec<_> = input.trim_end().split_whitespace().collect();
+                let mut dur = 10;
+                if  parts.len() > 1 {
+                    dur = parts[1].parse().unwrap();
+                }
+                let mut ai = AlphaBetaAI::with_duration(game.player1_moves, dur);
                 let m = ai.get_move(game);
                 println!("AI recommends: {}", m);
             } else {

@@ -142,7 +142,7 @@ impl Strategy for AlphaBetaAI {
 
                 return GameMove::Place(Die::new(DiceColor::Red, 2), coord.0);
             }
-            1 => {
+/*            1 => {
                 // We are just starting, let's play a random `place`
                 // in better empty squares.
                 let coord = game
@@ -154,6 +154,7 @@ impl Strategy for AlphaBetaAI {
 
                 return GameMove::Place(Die::new(DiceColor::Black, 5), coord.0);
             }
+*/
             _ => {
                 // Now just run alpha-beta.
                 if self.duration != 0 {
@@ -173,7 +174,6 @@ impl Strategy for AlphaBetaAI {
     }
 }
 
-/*
 #[cfg(test)]
 mod test {
     use super::*;
@@ -195,5 +195,3 @@ mod test {
         Ok(())
     }
 }
-
-*/
