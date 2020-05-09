@@ -176,8 +176,14 @@ impl Board {
 
     /// Iterator over all cards along with their coordinates (in
     /// arbitrary order).
+    #[allow(unused)]
     pub fn coord_cards_iter(&self) -> impl Iterator<Item = (&Coord, &Card)> {
         self.cards.iter()
+    }
+
+    /// Iterator over all coordinates (in arbitrary order).
+    pub fn coords_iter(&self) -> impl Iterator<Item = &Coord> {
+        self.cards.keys()
     }
 
     /// Positions of cards from given `row` (`y` coordinate) ordered

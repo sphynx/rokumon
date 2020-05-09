@@ -1,3 +1,4 @@
+use crate::card::{DiceColor, Die};
 use crate::coord::Coord;
 use crate::game::{Game, GameMove, GameResult};
 use crate::strategy::Strategy;
@@ -19,19 +20,38 @@ impl rubot::Game for Game {
 
     fn execute(&mut self, action: &Self::Action, player: Self::Player) -> Self::Fitness {
         self.apply_move_unchecked(action);
-        let eval = evaluate(self);
-        if player {
-            eval
-        } else {
-            if eval == i32::MAX {
-                i32::MIN
-            } else if eval == i32::MIN {
-                i32::MAX
-            } else {
-                -eval
+
+        match self.result {
+            GameResult::FirstPlayerWon => {
+                if player {
+                    i32::MAX
+                } else {
+                    i32::MIN
+                }
             }
+            GameResult::SecondPlayerWon => {
+                if player {
+                    i32::MIN
+                } else {
+                    i32::MAX
+                }
+            }
+            GameResult::InProgress => 0,
         }
     }
+    //     let eval = evaluate(self);
+    //     if player {
+    //         eval
+    //     } else {
+    //         if eval == i32::MAX {
+    //             i32::MIN
+    //         } else if eval == i32::MIN {
+    //             i32::MAX
+    //         } else {
+    //             -eval
+    //         }
+    //     }
+    // }
 
     #[inline]
     fn is_upper_bound(&self, fitness: Self::Fitness, _player: Self::Player) -> bool {
@@ -44,6 +64,7 @@ impl rubot::Game for Game {
     }
 }
 
+/*
 fn evaluate(game: &Game) -> i32 {
     match game.result {
         GameResult::FirstPlayerWon => std::i32::MAX,
@@ -78,7 +99,7 @@ fn evaluate(game: &Game) -> i32 {
         }
     }
 }
-
+*/
 
 pub struct AlphaBetaAI {
     duration: u64,
@@ -114,7 +135,7 @@ impl AlphaBetaAI {
 
 impl Strategy for AlphaBetaAI {
     fn get_move(&mut self, game: &Game) -> GameMove<Coord> {
-        macro_rules! log_ai {
+        macro_rules! run_ai_until {
             ($condition:expr) => {
                 let mut logger = Logger::new($condition);
                 let res = self.bot.select(&game, &mut logger).unwrap();
@@ -129,18 +150,51 @@ impl Strategy for AlphaBetaAI {
             };
         }
 
-        if self.duration != 0 {
-            log_ai!(Duration::from_secs(self.duration));
-        } else if self.depth != 0 {
-            log_ai!(Depth(self.depth));
-        } else {
-            log_ai!(ToCompletion);
+        match game.ply_to_be_played() {
+            0 => {
+                // We are just starting, let's play a random `place`
+                // in better squares.
+                let coord = game
+                    .board
+                    .coords_iter()
+                    .map(|coord| (*coord, game.board.num_of_adjacent_triples(*coord)))
+                    .max_by_key(|(_coord, n)| *n)
+                    .unwrap();
+
+                return GameMove::Place(Die::new(DiceColor::Red, 2), coord.0);
+            }
+            1 => {
+                // We are just starting, let's play a random `place`
+                // in better empty squares.
+                let coord = game
+                    .board
+                    .empty_cards_iter()
+                    .map(|(coord, _card)| (*coord, game.board.num_of_adjacent_triples(*coord)))
+                    .max_by_key(|(_coord, n)| *n)
+                    .unwrap();
+
+                return GameMove::Place(Die::new(DiceColor::Black, 1), coord.0);
+            }
+            _ => {
+                // Now just run alpha-beta.
+                if self.duration != 0 {
+                    let duration = Duration::from_secs(self.duration);
+                    println!("Running AI with duration {:?}...", &duration);
+                    run_ai_until!(duration);
+                } else if self.depth != 0 {
+                    let depth = Depth(self.depth);
+                    println!("Running AI with depth {:?}...", &depth);
+                    run_ai_until!(depth);
+                } else {
+                    println!("Running AI until completion...");
+                    run_ai_until!(ToCompletion);
+                }
+            }
         }
     }
 }
 
-
-
+/*
 #[cfg(test)]
 mod test {
     use super::*;
@@ -162,3 +216,5 @@ mod test {
         Ok(())
     }
 }
+
+*/

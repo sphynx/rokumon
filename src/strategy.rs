@@ -12,7 +12,11 @@ pub struct Human;
 
 impl Strategy for Human {
     fn get_move(&mut self, game: &Game) -> GameMove<Coord> {
-        println!("Your turn, please enter your move:");
+        println!("\n");
+        println!("Current game state: {}", game);
+        println!("\n");
+        println!("Move syntax: place W1 at R2C2, move B3 from R1C1 to R1C2, fight at R2C3");
+        println!("Your turn, please enter your move.");
         loop {
             let mut input = String::new();
             io::stdin().read_line(&mut input).expect("Failed to read input");

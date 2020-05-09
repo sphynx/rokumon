@@ -173,7 +173,7 @@ pub struct Game {
 
 impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "Board:")?;
+        writeln!(f, "")?;
         write!(f, "{}", self.board)?;
         writeln!(f, "{}", self.player1)?;
         writeln!(f, "{}", self.player2)?;
@@ -339,6 +339,11 @@ impl Game {
             }
             Submit => Ok(()),
         }
+    }
+
+    /// Number of ply (semi-move) to be played. Starts from zero.
+    pub fn ply_to_be_played(&self) -> usize {
+        self.history.len()
     }
 
     /// Applies a move to the current game state.

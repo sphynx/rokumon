@@ -20,8 +20,8 @@ pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl S
             step(&mut player2, &mut game)
         };
 
-        println!("Move: {}", mov);
-        println!("{}", game);
+        println!("\n\nPlayed move: {}\n\n", mov);
+        println!("Resulting position:\n{}", game);
     }
 
     println!(
