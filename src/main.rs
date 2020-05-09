@@ -46,7 +46,6 @@ enum Opponents {
     AIHuman,
     AIAI,
     RandomRandom,
-    //    Analyse,
 }
 
 impl FromStr for Opponents {
@@ -59,7 +58,6 @@ impl FromStr for Opponents {
             "aihuman" => Ok(AIHuman),
             "aiai" => Ok(AIAI),
             "rr" | "randomrandom" => Ok(RandomRandom),
-            //            "analyse" | "analyze" => Ok(Analyse),
             _ => bail!("Can't parse opponents specification: {}", s),
         }
     }
@@ -84,8 +82,23 @@ struct Opt {
     #[structopt(long, default_value = "gggjjjj")]
     cards: String,
 
+    #[structopt(long)]
+    shuffle: bool,
+
     #[structopt(short, long, default_value = "bricks7")]
     layout: Layout,
+
+    #[structopt(long)]
+    ai_depth: Option<u32>,
+
+    #[structopt(long)]
+    ai_duration: Option<u64>,
+
+    #[structopt(long)]
+    second_ai_depth: Option<u32>,
+
+    #[structopt(long)]
+    second_ai_duration: Option<u64>,
 
     #[structopt(short = "f", long)]
     enable_fight_move: bool,
@@ -114,9 +127,14 @@ fn main() -> Fallible<()> {
     let opt = Opt::from_args();
     println!("{}", opt);
 
-    let deck = Deck::ordered(opt.cards.as_str())?;
+    let cards_spec = opt.cards.as_str();
+    let deck = if opt.shuffle {
+        Deck::shuffled(cards_spec)
+    } else {
+        Deck::ordered(cards_spec)
+    }?;
+
     let rules = Rules::new(opt.enable_fight_move, opt.enable_surprise_move);
-    let max_depth = opt.depth;
 
     let mut game = Game::new(Layout::Bricks7, deck, rules);
 
@@ -124,12 +142,56 @@ fn main() -> Fallible<()> {
         Mode::Play => match opt.opponents {
             Opponents::HumanHuman => play::play_game(game, Human, Human),
             Opponents::RandomRandom => play::play_game(game, RandomAI, RandomAI),
-            Opponents::HumanAI => play::play_game(game, Human, AlphaBetaAI::new(false, 3)),
-            Opponents::AIHuman => play::play_game(game, AlphaBetaAI::new(true, 3), Human),
-            Opponents::AIAI => play::play_game(game, AlphaBetaAI::new(true, 3), AlphaBetaAI::new(false, 3)),
+
+            Opponents::HumanAI => {
+                let for_first_player = false;
+                let ai = if let Some(dur) = opt.ai_duration {
+                    AlphaBetaAI::with_duration(for_first_player, dur)
+                } else if let Some(d) = opt.ai_depth {
+                    AlphaBetaAI::with_depth(for_first_player, d)
+                } else {
+                    AlphaBetaAI::to_completion(for_first_player)
+                };
+                play::play_game(game, Human, ai)
+            }
+
+            Opponents::AIHuman => {
+                let for_first_player = true;
+                let ai = if let Some(dur) = opt.ai_duration {
+                    AlphaBetaAI::with_duration(for_first_player, dur)
+                } else if let Some(d) = opt.ai_depth {
+                    AlphaBetaAI::with_depth(for_first_player, d)
+                } else {
+                    AlphaBetaAI::to_completion(for_first_player)
+                };
+                play::play_game(game, ai, Human)
+            }
+
+            Opponents::AIAI => {
+                let for_first_player = true;
+                let first_ai = if let Some(dur) = opt.ai_duration {
+                    AlphaBetaAI::with_duration(for_first_player, dur)
+                } else if let Some(d) = opt.ai_depth {
+                    AlphaBetaAI::with_depth(for_first_player, d)
+                } else {
+                    AlphaBetaAI::to_completion(for_first_player)
+                };
+
+                let for_first_player = false;
+                let second_ai = if let Some(dur) = opt.second_ai_duration {
+                    AlphaBetaAI::with_duration(for_first_player, dur)
+                } else if let Some(d) = opt.second_ai_depth {
+                    AlphaBetaAI::with_depth(for_first_player, d)
+                } else {
+                    AlphaBetaAI::to_completion(for_first_player)
+                };
+
+                play::play_game(game, first_ai, second_ai)
+            }
         },
 
         Mode::Perft | Mode::ParallelPerft => {
+            let max_depth = opt.depth;
             for depth in 1..=max_depth {
                 let now = Instant::now();
                 let perft = match &opt.mode {
