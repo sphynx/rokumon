@@ -2,7 +2,7 @@ use crate::coord::Coord;
 use crate::game::{Game, GameMove, GameResult};
 use crate::strategy::Strategy;
 
-pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl Strategy) {
+pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl Strategy) -> bool {
     fn step(player: &mut impl Strategy, game: &mut Game) -> GameMove<Coord> {
         loop {
             let mov = player.get_move(&game);
@@ -33,4 +33,6 @@ pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl S
         },
         game.history.len()
     );
+
+    game.result == GameResult::FirstPlayerWon
 }

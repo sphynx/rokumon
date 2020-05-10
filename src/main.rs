@@ -25,6 +25,7 @@ enum Mode {
     Perft,
     ParallelPerft,
     Play,
+    Match,
 }
 
 impl FromStr for Mode {
@@ -35,6 +36,7 @@ impl FromStr for Mode {
             "perft" => Ok(Perft),
             "par_perft" => Ok(ParallelPerft),
             "play" => Ok(Play),
+            "match" => Ok(Match),
             _ => bail!("Can't parse play mode: {}", s),
         }
     }
@@ -101,6 +103,9 @@ struct Opt {
     #[structopt(long)]
     second_ai_duration: Option<u64>,
 
+    #[structopt(long, default_value = "10")]
+    samples: u32,
+
     #[structopt(short = "f", long)]
     enable_fight_move: bool,
 
@@ -124,75 +129,97 @@ impl Display for Opt {
     }
 }
 
-fn main() -> Fallible<()> {
-    let opt = Opt::from_args();
-    println!("{}", opt);
-
+fn play_game(opt: &Opt, rules: &Rules) -> bool {
     let cards_spec = opt.cards.as_str();
     let deck = if opt.shuffle {
         Deck::shuffled(cards_spec)
     } else {
         Deck::ordered(cards_spec)
-    }?;
+    }
+    .unwrap();
+
+    let game = Game::new(Layout::Bricks7, deck, rules.clone());
+    match opt.opponents {
+        Opponents::HumanHuman => play::play_game(game, Human, Human),
+        Opponents::RandomRandom => play::play_game(game, RandomAI, RandomAI),
+
+        Opponents::HumanAI => {
+            let for_first_player = false;
+            let ai = if let Some(dur) = opt.ai_duration {
+                AlphaBetaAI::with_duration(for_first_player, dur)
+            } else if let Some(d) = opt.ai_depth {
+                AlphaBetaAI::with_depth(for_first_player, d)
+            } else {
+                AlphaBetaAI::to_completion(for_first_player)
+            };
+            play::play_game(game, Human, ai)
+        }
+
+        Opponents::AIHuman => {
+            let for_first_player = true;
+            let ai = if let Some(dur) = opt.ai_duration {
+                AlphaBetaAI::with_duration(for_first_player, dur)
+            } else if let Some(d) = opt.ai_depth {
+                AlphaBetaAI::with_depth(for_first_player, d)
+            } else {
+                AlphaBetaAI::to_completion(for_first_player)
+            };
+            play::play_game(game, ai, Human)
+        }
+
+        Opponents::AIAI => {
+            let for_first_player = true;
+            let first_ai = if let Some(dur) = opt.ai_duration {
+                AlphaBetaAI::with_duration(for_first_player, dur)
+            } else if let Some(d) = opt.ai_depth {
+                AlphaBetaAI::with_depth(for_first_player, d)
+            } else {
+                AlphaBetaAI::to_completion(for_first_player)
+            };
+
+            let for_first_player = false;
+            let second_ai = if let Some(dur) = opt.second_ai_duration {
+                AlphaBetaAI::with_duration(for_first_player, dur)
+            } else if let Some(d) = opt.second_ai_depth {
+                AlphaBetaAI::with_depth(for_first_player, d)
+            } else {
+                AlphaBetaAI::to_completion(for_first_player)
+            };
+
+            play::play_game(game, first_ai, second_ai)
+        }
+    }
+}
+
+fn main() -> Fallible<()> {
+    let opt = Opt::from_args();
+    println!("{}", opt);
 
     let rules = Rules::new(opt.enable_fight_move, opt.enable_surprise_move);
-
-    let mut game = Game::new(Layout::Bricks7, deck, rules);
-
     match &opt.mode {
-        Mode::Play => match opt.opponents {
-            Opponents::HumanHuman => play::play_game(game, Human, Human),
-            Opponents::RandomRandom => play::play_game(game, RandomAI, RandomAI),
-
-            Opponents::HumanAI => {
-                let for_first_player = false;
-                let ai = if let Some(dur) = opt.ai_duration {
-                    AlphaBetaAI::with_duration(for_first_player, dur)
-                } else if let Some(d) = opt.ai_depth {
-                    AlphaBetaAI::with_depth(for_first_player, d)
-                } else {
-                    AlphaBetaAI::to_completion(for_first_player)
-                };
-                play::play_game(game, Human, ai)
+        Mode::Play => {
+            play_game(&opt, &rules);
+        }
+        Mode::Match => {
+            let n = opt.samples;
+            let mut player1_wins = 0;
+            for _ in 0..n {
+                if play_game(&opt, &rules) {
+                    player1_wins += 1;
+                }
             }
-
-            Opponents::AIHuman => {
-                let for_first_player = true;
-                let ai = if let Some(dur) = opt.ai_duration {
-                    AlphaBetaAI::with_duration(for_first_player, dur)
-                } else if let Some(d) = opt.ai_depth {
-                    AlphaBetaAI::with_depth(for_first_player, d)
-                } else {
-                    AlphaBetaAI::to_completion(for_first_player)
-                };
-                play::play_game(game, ai, Human)
-            }
-
-            Opponents::AIAI => {
-                let for_first_player = true;
-                let first_ai = if let Some(dur) = opt.ai_duration {
-                    AlphaBetaAI::with_duration(for_first_player, dur)
-                } else if let Some(d) = opt.ai_depth {
-                    AlphaBetaAI::with_depth(for_first_player, d)
-                } else {
-                    AlphaBetaAI::to_completion(for_first_player)
-                };
-
-                let for_first_player = false;
-                let second_ai = if let Some(dur) = opt.second_ai_duration {
-                    AlphaBetaAI::with_duration(for_first_player, dur)
-                } else if let Some(d) = opt.second_ai_depth {
-                    AlphaBetaAI::with_depth(for_first_player, d)
-                } else {
-                    AlphaBetaAI::to_completion(for_first_player)
-                };
-
-                play::play_game(game, first_ai, second_ai)
-            }
-        },
-
+            println!("Played {} games: {} : {}", n, player1_wins, n - player1_wins);
+        }
         Mode::Perft | Mode::ParallelPerft => {
             let max_depth = opt.depth;
+            let cards_spec = opt.cards.as_str();
+            let deck = if opt.shuffle {
+                Deck::shuffled(cards_spec)
+            } else {
+                Deck::ordered(cards_spec)
+            }?;
+
+            let mut game = Game::new(Layout::Bricks7, deck, rules);
             for depth in 1..=max_depth {
                 let now = Instant::now();
                 let perft = match &opt.mode {
