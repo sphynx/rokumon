@@ -4,7 +4,7 @@ An AI for playing [Rokumon game](https://boardgamegeek.com/thread/2380440/wip-ro
 
 # How to build, install and play
 
-It's written in Rust programming language, so you have to run usual invocations for settin up Rust:
+It's written in Rust programming language, so you have to run usual invocations for setting up Rust:
 
 1. Install `rustup`, a standard installer for Rust (it supports variety of platforms including Linux, Mac and Windows):
 https://rustup.rs/
