@@ -1,0 +1,414 @@
+# Those are two games my bot played vs Charles via TableTopSimulator.
+
+➜  rokumon git:(master) ✗ target/release/rokumon -o HumanAI --ai-duration 20 -f --shuffle
+Options: depth=5, mode=Play, opponents=HumanAI, cards="gggjjjj", layout=Bricks7, with_fight=true, with_surprise=false
+
+
+Current game state:
+Jade[] Gold[] Jade[]
+Jade[] Gold[] Gold[] Jade[]
+Player 1: [R2, R2, R4, R6]
+Player 2: [B1, B3, B3, B5, W1]
+to move: Player 1
+
+
+
+Your turn, please enter your move.
+place r4 at r2c2
+
+
+Played move: place R4 at <1, 0, -1>
+
+
+Resulting position:
+
+Jade[] Gold[] Jade[]
+Jade[] Gold[R4] Gold[] Jade[]
+Player 1: [R2, R2, R6]
+Player 2: [B1, B3, B3, B5, W1]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 120080, depth: 7, completed: false, duration: 20.000515199s
+
+
+Played move: place B5 at <3, 0, -3>
+
+
+Resulting position:
+
+Jade[] Gold[] Jade[]
+Jade[] Gold[R4] Gold[] Jade[B5]
+Player 1: [R2, R2, R6]
+Player 2: [B1, B3, B3, W1]
+to move: Player 1
+
+
+Your turn, please enter your move.
+move r4 from r2c2 to r2c4
+
+
+Played move: move R4 from <1, 0, -1> to <3, 0, -3>
+
+
+Resulting position:
+
+Jade[] Gold[] Jade[]
+Jade[] Gold[] Gold[] Jade[B5 < R4]
+Player 1: [R2, R2, R6]
+Player 2: [B1, B3, B3, W1]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 137742, depth: 7, completed: false, duration: 20.000440308s
+
+
+Played move: fight at <3, 0, -3>
+
+
+Resulting position:
+
+Jade[] Gold[] Jade[]
+Jade[] Gold[] Gold[] Jade[B5]
+Player 1: [R2, R2, R6, R4]
+Player 2: [B1, B3, B3, W1]
+to move: Player 1
+
+
+Your turn, please enter your move.
+place r6 at r2c3
+
+
+Played move: place R6 at <2, 0, -2>
+
+
+Resulting position:
+
+Jade[] Gold[] Jade[]
+Jade[] Gold[] Gold[R6] Jade[B5]
+Player 1: [R2, R2, R4]
+Player 2: [B1, B3, B3, W1]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 89015, depth: 6, completed: false, duration: 20.000719032s
+
+
+Played move: place B3 at <1, 0, -1>
+
+
+Resulting position:
+
+Jade[] Gold[] Jade[]
+Jade[] Gold[B3] Gold[R6] Jade[B5]
+Player 1: [R2, R2, R4]
+Player 2: [B1, B3, W1]
+to move: Player 1
+
+
+
+Your turn, please enter your move.
+place r4 at r2c1
+
+
+Played move: place R4 at <0, 0, 0>
+
+
+Resulting position:
+
+Jade[] Gold[] Jade[]
+Jade[R4] Gold[B3] Gold[R6] Jade[B5]
+Player 1: [R2, R2]
+Player 2: [B1, B3, W1]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 126545, depth: 8, completed: true, duration: 17.471487111s
+
+
+Played move: move B5 from <3, 0, -3> to <1, 0, -1>
+
+
+Resulting position:
+
+Jade[] Gold[] Jade[]
+Jade[R4] Gold[B3 < B5] Gold[R6] Jade[]
+Player 1: [R2, R2]
+Player 2: [B1, B3, W1]
+to move: Player 1
+
+
+
+Your turn, please enter your move.
+move r4 from r2c1 to r2c3
+
+
+Played move: move R4 from <0, 0, 0> to <2, 0, -2>
+
+
+Resulting position:
+
+Jade[] Gold[] Jade[]
+Jade[] Gold[B3 < B5] Gold[R6 < R4] Jade[]
+Player 1: [R2, R2]
+Player 2: [B1, B3, W1]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 12968, depth: 6, completed: true, duration: 1.644120703s
+
+
+Played move: place B3 at <2, -1, -1>
+
+
+Resulting position:
+
+Jade[] Gold[B3] Jade[]
+Jade[] Gold[B3 < B5] Gold[R6 < R4] Jade[]
+Player 1: [R2, R2]
+Player 2: [B1, W1]
+to move: Player 1
+
+
+Your turn, please enter your move.
+place r2 at r2c4
+
+
+Played move: place R2 at <3, 0, -3>
+
+
+Resulting position:
+
+Jade[] Gold[B3] Jade[]
+Jade[] Gold[B3 < B5] Gold[R6 < R4] Jade[R2]
+Player 1: [R2]
+Player 2: [B1, W1]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 103, depth: 2, completed: true, duration: 7.430773ms
+
+
+Played move: move B3 from <2, -1, -1> to <3, 0, -3>
+
+
+Resulting position:
+
+Jade[] Gold[] Jade[]
+Jade[] Gold[B3 < B5] Gold[R6 < R4] Jade[R2 < B3]
+Player 1: [R2]
+Player 2: [B1, W1]
+to move: Player 1
+
+
+Your turn, please enter your move.
+^C
+
+
+➜  rokumon git:(master) ✗ target/release/rokumon -o HumanAI --ai-duration 20 -f --shuffle
+Options: depth=5, mode=Play, opponents=HumanAI, cards="gggjjjj", layout=Bricks7, with_fight=true, with_surprise=false
+
+
+Current game state:
+Jade[] Gold[] Gold[]
+Jade[] Jade[] Gold[] Jade[]
+Player 1: [R2, R2, R4, R6]
+Player 2: [B1, B3, B3, B5, W1]
+to move: Player 1
+
+
+
+Your turn, please enter your move.
+place r4 at r2c3
+
+
+Played move: place R4 at <2, 0, -2>
+
+
+Resulting position:
+
+Jade[] Gold[] Gold[]
+Jade[] Jade[] Gold[R4] Jade[]
+Player 1: [R2, R2, R6]
+Player 2: [B1, B3, B3, B5, W1]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 143391, depth: 8, completed: false, duration: 20.000119911s
+
+
+Played move: place B5 at <1, 0, -1>
+
+
+Resulting position:
+
+Jade[] Gold[] Gold[]
+Jade[] Jade[B5] Gold[R4] Jade[]
+Player 1: [R2, R2, R6]
+Player 2: [B1, B3, B3, W1]
+to move: Player 1
+
+
+
+Your turn, please enter your move.
+move r4 from r2c3 to r2c2
+
+
+Played move: move R4 from <2, 0, -2> to <1, 0, -1>
+
+
+Resulting position:
+
+Jade[] Gold[] Gold[]
+Jade[] Jade[B5 < R4] Gold[] Jade[]
+Player 1: [R2, R2, R6]
+Player 2: [B1, B3, B3, W1]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 157933, depth: 8, completed: false, duration: 20.000294668s
+
+
+Played move: place W1 at <0, 0, 0>
+
+
+Resulting position:
+
+Jade[] Gold[] Gold[]
+Jade[W1] Jade[B5 < R4] Gold[] Jade[]
+Player 1: [R2, R2, R6]
+Player 2: [B1, B3, B3]
+to move: Player 1
+
+
+
+Your turn, please enter your move.
+place r2 at r2c3
+
+
+Played move: place R2 at <2, 0, -2>
+
+
+Resulting position:
+
+Jade[] Gold[] Gold[]
+Jade[W1] Jade[B5 < R4] Gold[R2] Jade[]
+Player 1: [R2, R6]
+Player 2: [B1, B3, B3]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 45783, depth: 8, completed: true, duration: 5.339922847s
+
+
+Played move: place B3 at <3, 0, -3>
+
+
+Resulting position:
+
+Jade[] Gold[] Gold[]
+Jade[W1] Jade[B5 < R4] Gold[R2] Jade[B3]
+Player 1: [R2, R6]
+Player 2: [B1, B3]
+to move: Player 1
+
+
+
+Your turn, please enter your move.
+move r4 from r2c2 to r2c3
+
+
+Played move: move R4 from <1, 0, -1> to <2, 0, -2>
+
+
+Resulting position:
+
+Jade[] Gold[] Gold[]
+Jade[W1] Jade[B5] Gold[R2 < R4] Jade[B3]
+Player 1: [R2, R6]
+Player 2: [B1, B3]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 9971, depth: 6, completed: true, duration: 1.363927006s
+
+
+Played move: place B1 at <1, -1, 0>
+
+
+Resulting position:
+
+Jade[B1] Gold[] Gold[]
+Jade[W1] Jade[B5] Gold[R2 < R4] Jade[B3]
+Player 1: [R2, R6]
+Player 2: [B3]
+to move: Player 1
+
+
+
+Your turn, please enter your move.
+place r6 at r1c2
+
+
+Played move: place R6 at <2, -1, -1>
+
+
+Resulting position:
+
+Jade[B1] Gold[R6] Gold[]
+Jade[W1] Jade[B5] Gold[R2 < R4] Jade[B3]
+Player 1: [R2]
+Player 2: [B3]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 419, depth: 4, completed: true, duration: 50.051747ms
+
+
+Played move: move W1 from <0, 0, 0> to <2, -1, -1>
+
+
+Resulting position:
+
+Jade[B1] Gold[R6 < W1] Gold[]
+Jade[] Jade[B5] Gold[R2 < R4] Jade[B3]
+Player 1: [R2]
+Player 2: [B3]
+to move: Player 1
+
+
+
+Your turn, please enter your move.
+move r4 from r2c3 to r1c1
+
+
+Played move: move R4 from <2, 0, -2> to <1, -1, 0>
+
+
+Resulting position:
+
+Jade[B1 < R4] Gold[R6 < W1] Gold[]
+Jade[] Jade[B5] Gold[R2] Jade[B3]
+Player 1: [R2]
+Player 2: [B3]
+to move: Player 2
+
+Running AI with duration 20s...
+AI log: steps: 77, depth: 2, completed: true, duration: 6.029434ms
+
+
+Played move: move B3 from <3, 0, -3> to <2, 0, -2>
+
+
+Resulting position:
+
+Jade[B1 < R4] Gold[R6 < W1] Gold[]
+Jade[] Jade[B5] Gold[R2 < B3] Jade[]
+Player 1: [R2]
+Player 2: [B3]
+to move: Player 1
+
+
+
+Your turn, please enter your move.
+

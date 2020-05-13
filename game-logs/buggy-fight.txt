@@ -1,0 +1,278 @@
+# In this game the AI played first player, made a move (and printed
+  and with depth = 9 it's still unsolved, however when I made my W1
+  place move -- it immediately saw the loss in 3 moves, how is that
+  possible?)
+
+(main-venv) ➜  rokumon git:(master) ✗ target/release/rokumon -o AIHuman -f --ai-duration 15 --shuffle
+Options: depth=5, mode=Play, opponents=AIHuman, cards="gggjjjj", layout=Bricks7, with_fight=true, with_surprise=false
+
+
+Played move: place R2 at <2, 0, -2>
+
+
+Resulting position:
+
+Jade[] Jade[] Jade[]
+Gold[] Gold[] Jade[R2] Gold[]
+Player 1: [R2, R4, R6]
+Player 2: [B1, B3, B3, B5, W1]
+to move: Player 2
+
+
+
+Current game state:
+Jade[] Jade[] Jade[]
+Gold[] Gold[] Jade[R2] Gold[]
+Player 1: [R2, R4, R6]
+Player 2: [B1, B3, B3, B5, W1]
+to move: Player 2
+
+
+
+Move syntax: place W1 at R2C2, move B3 from R1C1 to R1C2, fight at R2C3
+Your turn, please enter your move.
+place b3 at r2c3
+Can't apply move: place: target card should be empty: <2, 0, -2>
+
+
+Current game state:
+Jade[] Jade[] Jade[]
+Gold[] Gold[] Jade[R2] Gold[]
+Player 1: [R2, R4, R6]
+Player 2: [B1, B3, B3, B5, W1]
+to move: Player 2
+
+
+
+Move syntax: place W1 at R2C2, move B3 from R1C1 to R1C2, fight at R2C3
+Your turn, please enter your move.
+place b3 at r2c2
+
+
+Played move: place B3 at <1, 0, -1>
+
+
+Resulting position:
+
+Jade[] Jade[] Jade[]
+Gold[] Gold[B3] Jade[R2] Gold[]
+Player 1: [R2, R4, R6]
+Player 2: [B1, B3, B5, W1]
+to move: Player 1
+
+Running AI with duration 15s...
+AI log: steps: 462682, depth: 8, completed: false, duration: 15.000120827s
+
+
+Played move: move R2 from <2, 0, -2> to <1, 0, -1>
+
+
+Resulting position:
+
+Jade[] Jade[] Jade[]
+Gold[] Gold[B3 < R2] Jade[] Gold[]
+Player 1: [R2, R4, R6]
+Player 2: [B1, B3, B5, W1]
+to move: Player 2
+
+
+
+Current game state:
+Jade[] Jade[] Jade[]
+Gold[] Gold[B3 < R2] Jade[] Gold[]
+Player 1: [R2, R4, R6]
+Player 2: [B1, B3, B5, W1]
+to move: Player 2
+
+
+
+Move syntax: place W1 at R2C2, move B3 from R1C1 to R1C2, fight at R2C3
+Your turn, please enter your move.
+fight at r2c2
+
+
+Played move: fight at <1, 0, -1>
+
+
+Resulting position:
+
+Jade[] Jade[] Jade[]
+Gold[] Gold[B3] Jade[] Gold[]
+Player 1: [R2, R4, R6, R2]
+Player 2: [B1, B3, B5, W1]
+to move: Player 1
+
+Running AI with duration 15s...
+AI log: steps: 487709, depth: 8, completed: false, duration: 15.000127444s
+
+
+Played move: place R6 at <2, 0, -2>
+
+
+Resulting position:
+
+Jade[] Jade[] Jade[]
+Gold[] Gold[B3] Jade[R6] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: [B1, B3, B5, W1]
+to move: Player 2
+
+
+
+Current game state:
+Jade[] Jade[] Jade[]
+Gold[] Gold[B3] Jade[R6] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: [B1, B3, B5, W1]
+to move: Player 2
+
+
+
+Move syntax: place W1 at R2C2, move B3 from R1C1 to R1C2, fight at R2C3
+Your turn, please enter your move.
+place b1 at r1c2
+
+
+Played move: place B1 at <2, -1, -1>
+
+
+Resulting position:
+
+Jade[] Jade[B1] Jade[]
+Gold[] Gold[B3] Jade[R6] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: [B3, B5, W1]
+to move: Player 1
+
+Running AI with duration 15s...
+AI log: steps: 472195, depth: 9, completed: false, duration: 15.00012128s
+
+
+Played move: move R6 from <2, 0, -2> to <1, 0, -1>
+
+
+Resulting position:
+
+Jade[] Jade[B1] Jade[]
+Gold[] Gold[B3 < R6] Jade[] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: [B3, B5, W1]
+to move: Player 2
+
+
+
+Current game state:
+Jade[] Jade[B1] Jade[]
+Gold[] Gold[B3 < R6] Jade[] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: [B3, B5, W1]
+to move: Player 2
+
+
+
+Move syntax: place W1 at R2C2, move B3 from R1C1 to R1C2, fight at R2C3
+Your turn, please enter your move.
+place w1 at r1c1
+
+
+Played move: place W1 at <1, -1, 0>
+
+
+Resulting position:
+
+Jade[W1] Jade[B1] Jade[]
+Gold[] Gold[B3 < R6] Jade[] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: [B3, B5]
+to move: Player 1
+
+Running AI with duration 15s...
+AI log: steps: 409, depth: 3, completed: true, duration: 14.217733ms
+
+
+Played move: move R6 from <1, 0, -1> to <3, -1, -2>
+
+
+Resulting position:
+
+Jade[W1] Jade[B1] Jade[R6]
+Gold[] Gold[B3] Jade[] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: [B3, B5]
+to move: Player 2
+
+
+
+Current game state:
+Jade[W1] Jade[B1] Jade[R6]
+Gold[] Gold[B3] Jade[] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: [B3, B5]
+to move: Player 2
+
+
+
+Move syntax: place W1 at R2C2, move B3 from R1C1 to R1C2, fight at R2C3
+Your turn, please enter your move.
+place b5 at r2c3
+
+
+Played move: place B5 at <2, 0, -2>
+
+
+Resulting position:
+
+Jade[W1] Jade[B1] Jade[R6]
+Gold[] Gold[B3] Jade[B5] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: [B3]
+to move: Player 1
+
+Running AI with duration 15s...
+AI log: steps: 35, depth: 1, completed: true, duration: 886.39µs
+
+
+Played move: move R6 from <3, -1, -2> to <1, 0, -1>
+
+
+Resulting position:
+
+Jade[W1] Jade[B1] Jade[]
+Gold[] Gold[B3 < R6] Jade[B5] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: [B3]
+to move: Player 2
+
+
+
+Current game state:
+Jade[W1] Jade[B1] Jade[]
+Gold[] Gold[B3 < R6] Jade[B5] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: [B3]
+to move: Player 2
+
+
+
+Move syntax: place W1 at R2C2, move B3 from R1C1 to R1C2, fight at R2C3
+Your turn, please enter your move.
+hint
+Running AI for hint...
+Running AI with duration 10s...
+AI log: steps: 2, depth: 0, completed: true, duration: 76.005µs
+AI recommends: place B3 at <3, -1, -2>
+place b3 at r1c3
+
+
+Played move: place B3 at <3, -1, -2>
+
+
+Resulting position:
+
+Jade[W1] Jade[B1] Jade[B3]
+Gold[] Gold[B3 < R6] Jade[B5] Gold[]
+Player 1: [R2, R4, R2]
+Player 2: []
+to move: Player 1
+
+Game over, second player won, 12 moves
