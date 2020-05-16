@@ -20,18 +20,7 @@ impl rubot::Game for Game {
 
     fn execute(&mut self, action: &Self::Action, player: Self::Player) -> Self::Fitness {
         self.apply_move_unchecked(action);
-        let eval = evaluate(self);
-        if player {
-            eval
-        } else {
-            if eval == i32::MAX {
-                i32::MIN
-            } else if eval == i32::MIN {
-                i32::MAX
-            } else {
-                -eval
-            }
-        }
+        evaluate_for_player(self, player)
     }
 
     #[inline]
@@ -45,7 +34,22 @@ impl rubot::Game for Game {
     }
 }
 
-fn evaluate(game: &Game) -> i32 {
+fn evaluate_for_player(game: &Game, player: bool) -> i32 {
+    let eval = evaluate_for_first_player(game);
+    if player {
+        eval
+    } else {
+        if eval == i32::MAX {
+            i32::MIN
+        } else if eval == i32::MIN {
+            i32::MAX
+        } else {
+            -eval
+        }
+    }
+}
+
+fn evaluate_for_first_player(game: &Game) -> i32 {
     match game.result {
         GameResult::FirstPlayerWon => std::i32::MAX,
         GameResult::SecondPlayerWon => std::i32::MIN,
@@ -125,13 +129,18 @@ impl Strategy for AlphaBetaAI {
                     logger.completed(),
                     logger.duration()
                 );
-                println!("AI evaluation: {}", &action.fitness);
+
+                // Evaluation from current player perspective.
+                println!("AI evaluation: {}", pp_evaluation(action.fitness));
+
+                // Evaluations in PV are printed from the first player perspective.
                 println!("PV:");
                 let mut game_tmp = game.clone();
                 for (ix, m) in action.path.iter().enumerate() {
                     let um = game_tmp.userify_move(&m);
                     game_tmp.apply_move_unchecked(&m);
-                    println!("{}: {}, eval: {}", ix + 1, um, evaluate(&game_tmp));
+                    let score = evaluate_for_first_player(&game_tmp);
+                    println!("{}: {}, eval: {}", ix + 1, um, pp_evaluation(score));
                 }
                 println!();
 
@@ -171,6 +180,16 @@ impl Strategy for AlphaBetaAI {
     }
 }
 
+fn pp_evaluation(score: i32) -> String {
+    if score == i32::MAX {
+        String::from("inf")
+    } else if score == i32::MIN {
+        String::from("-inf")
+    } else {
+        format!("{}", score)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -183,11 +202,11 @@ mod test {
     #[test]
     fn test_eval() -> Fallible<()> {
         let mut game = Game::new(Layout::Bricks7, Deck::ordered("JJJGGGG")?, Rules::default());
-        assert_eq!(evaluate(&game), 0);
+        assert_eq!(evaluate_for_first_player(&game), 0);
         game.apply_move_str("place r2 at r1c2")?;
-        assert_eq!(evaluate(&game), 1);
+        assert_eq!(evaluate_for_first_player(&game), 1);
         game.apply_move_str("place b3 at r2c2")?;
-        assert_eq!(evaluate(&game), -1);
+        assert_eq!(evaluate_for_first_player(&game), -1);
 
         Ok(())
     }
