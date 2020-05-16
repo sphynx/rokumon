@@ -57,7 +57,7 @@ impl fmt::Display for Die {
 }
 
 /// Possible card kinds. There are three of them so far.
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone, Debug)]
 pub enum CardKind {
     Jade,
     Gold,
@@ -78,7 +78,7 @@ impl TryFrom<char> for CardKind {
 }
 
 /// A card in the game. It is of certain kind and may have dice on it.
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
 pub struct Card {
     pub kind: CardKind,
 

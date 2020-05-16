@@ -2,11 +2,12 @@ use rand::seq::SliceRandom;
 use std::collections::BTreeSet;
 use std::fmt;
 use std::str::FromStr;
+use std::collections::BTreeMap;
 
 use failure::{bail, ensure, format_err, Fallible};
 
 use crate::board::{Board, Layout};
-use crate::card::{Deck, DiceColor, Die};
+use crate::card::{Card, Deck, DiceColor, Die};
 use crate::coord::{Coord, UserCoord};
 use crate::parsers;
 
@@ -780,6 +781,29 @@ impl Game {
     pub fn is_game_over(&self) -> bool {
         self.result != GameResult::InProgress
     }
+
+    /// Returns "defining features" of the game which can be used to
+    /// check if the same position repeats again and again.
+    pub fn defining_features(&self) -> GameFeatures {
+        GameFeatures {
+            cards: self.board.cards.clone(),
+            player1_dice: self.player1.dice.clone(),
+            player2_dice: self.player2.dice.clone(),
+            player1_moves: self.player1_moves,
+            player1_surprises: self.player1_surprises,
+            player2_surprises: self.player2_surprises,
+        }
+    }
+}
+
+#[derive(PartialOrd, Ord, PartialEq, Eq, Hash)]
+pub struct GameFeatures {
+    cards: BTreeMap<Coord, Card>,
+    player1_dice: Vec<Die>,
+    player2_dice: Vec<Die>,
+    player1_moves: bool,
+    player1_surprises: u8,
+    player2_surprises: u8,
 }
 
 #[cfg(test)]

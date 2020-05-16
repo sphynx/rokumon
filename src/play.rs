@@ -1,5 +1,7 @@
 use crate::coord::Coord;
-use crate::game::{Game, GameMove, GameResult};
+use crate::game::{Game, GameFeatures, GameMove, GameResult};
+
+use std::collections::HashMap;
 
 pub trait Strategy {
     fn get_move(&mut self, game: &Game) -> GameMove<Coord>;
@@ -26,7 +28,10 @@ pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl S
         }
     }
 
-    while !game.is_game_over() {
+    let mut positions: HashMap<GameFeatures, u8> = HashMap::new();
+    let mut triple_repetion = false;
+
+    while !game.is_game_over() && !triple_repetion {
         let mov = if game.player1_moves {
             step(&mut player1, &mut game)
         } else {
@@ -34,17 +39,27 @@ pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl S
         };
 
         println!("Played move: {}", game.userify_move(&mov));
+
+        let counter = positions.entry(game.defining_features()).or_insert(0);
+        *counter += 1;
+        if *counter == 3 {
+            triple_repetion = true;
+        }
     }
 
-    println!(
-        "Game over! {} player won in {} moves.",
-        if game.result == GameResult::FirstPlayerWon {
-            "First"
-        } else {
-            "Second"
-        },
-        game.history.len()
-    );
+    if triple_repetion {
+        println!("Game over! Drawn in {} moves.", game.history.len());
+    } else {
+        println!(
+            "Game over! {} player won in {} moves.",
+            if game.result == GameResult::FirstPlayerWon {
+                "First"
+            } else {
+                "Second"
+            },
+            game.history.len()
+        );
+    }
 
     println!("Moves history:");
     for (ix, m) in game.history.iter().enumerate() {
