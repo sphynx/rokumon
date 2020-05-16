@@ -95,7 +95,7 @@ impl FromStr for GameMove<UserCoord> {
     }
 }
 
-impl<T: fmt::Display> fmt::Display for GameMove<T>  {
+impl<T: fmt::Display> fmt::Display for GameMove<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use GameMove::*;
         match self {
@@ -179,7 +179,7 @@ impl fmt::Display for Game {
         writeln!(f, "{}", self.player2)?;
         writeln!(
             f,
-            "to move: {}",
+            "To move: {}",
             if self.player1_moves { "Player 1" } else { "Player 2" }
         )
     }

@@ -69,19 +69,19 @@ impl FromStr for Opponents {
 
 #[derive(Debug, StructOpt)]
 struct Opt {
-    #[structopt(short, long, default_value = "play", help = "perft | par_perft | play")]
+    #[structopt(short, long, default_value = "play", help = "play | perft | par_perft")]
     mode: Mode,
 
     #[structopt(
         short,
         long,
         default_value = "RR",
-        help = "HumanHuman | HumanAI | AIHuman | AIAI | RR"
+        help = "HumanHuman | HumanAI | AIHuman | AIAI | RandomRandom"
     )]
     opponents: Opponents,
 
-    #[structopt(short, long, default_value = "5")]
-    depth: usize,
+    #[structopt(long, default_value = "5")]
+    perft_depth: usize,
 
     #[structopt(long, default_value = "gggjjjj")]
     cards: String,
@@ -118,14 +118,18 @@ impl Display for Opt {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "Options: depth={}, mode={:?}, opponents={:?}, cards={:?}, layout={:?}, with_fight={}, with_surprise={}",
-            self.depth,
+            "Options: mode={:?}, opponents={:?}, cards={:?}, shuffle={}, layout={:?}, with_fight={}, with_surprise={}, ai_duration={:?}, ai_depth={:?}, second_ai_duration={:?}, second_ai_depth={:?}",
             self.mode,
             self.opponents,
             self.cards,
+            self.shuffle,
             self.layout,
             self.enable_fight_move,
-            self.enable_surprise_move
+            self.enable_surprise_move,
+            self.ai_duration,
+            self.ai_depth,
+            self.second_ai_duration,
+            self.second_ai_depth,
         )
     }
 }
@@ -212,7 +216,7 @@ fn main() -> Fallible<()> {
             println!("Played {} games: {} : {}", n, player1_wins, n - player1_wins);
         }
         Mode::Perft | Mode::ParallelPerft => {
-            let max_depth = opt.depth;
+            let max_depth = opt.perft_depth;
             let cards_spec = opt.cards.as_str();
             let deck = if opt.shuffle {
                 Deck::shuffled(cards_spec)

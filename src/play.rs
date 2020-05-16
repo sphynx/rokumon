@@ -14,12 +14,15 @@ impl Strategy for RandomAI {
 }
 
 pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl Strategy) -> bool {
+
+    println!("Starting position: {}", &game);
+
     fn step(player: &mut impl Strategy, game: &mut Game) -> GameMove<Coord> {
         loop {
             let mov = player.get_move(&game);
             match game.apply_move(&mov) {
                 Ok(_) => break mov,
-                Err(msg) => println!("Can't apply move: {}", msg),
+                Err(msg) => println!("[ERR] Can't apply move: {}", msg),
             }
         }
     }
@@ -31,20 +34,23 @@ pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl S
             step(&mut player2, &mut game)
         };
 
-        let user_coord_move = game.userify_move(&mov);
-        println!("\n\nPlayed move: {}\n\n", user_coord_move);
-        println!("Resulting position:\n{}", game);
+        println!("Played move: {}", game.userify_move(&mov));
     }
 
     println!(
-        "Game over, {} player won, {} moves",
+        "Game over! {} player won in {} moves.",
         if game.result == GameResult::FirstPlayerWon {
-            "first"
+            "First"
         } else {
-            "second"
+            "Second"
         },
         game.history.len()
     );
+
+    println!("Moves history:");
+    for (ix, m) in game.history.iter().enumerate() {
+        println!("{}: {}", ix + 1, game.userify_move(&m));
+    }
 
     game.result == GameResult::FirstPlayerWon
 }

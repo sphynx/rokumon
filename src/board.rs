@@ -3,7 +3,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use itertools::Itertools;
-use std::collections::{BTreeSet, BTreeMap};
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::card::{Card, Deck, Die};
 use crate::coord::{Coord, UserCoord};

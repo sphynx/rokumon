@@ -48,9 +48,9 @@ impl Die {
 impl fmt::Display for Die {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let color = match &self.color {
-            DiceColor::Red => "R",
-            DiceColor::White => "W",
-            DiceColor::Black => "B",
+            DiceColor::Red => "r",
+            DiceColor::White => "w",
+            DiceColor::Black => "b",
         };
         write!(f, "{}{}", color, self.value)
     }
