@@ -56,6 +56,7 @@ mod test {
         let rules = Rules::new(true, true);
         let mut game = Game::new(Layout::Bricks7, deck.clone(), rules);
         assert_eq!(perft(&mut game, 1), 56);
+        assert_eq!(perft(&mut game, 2), 3422);
 
         let rules = Rules::new(true, false);
         let mut game = Game::new(Layout::Bricks7, deck.clone(), rules);
@@ -63,6 +64,10 @@ mod test {
         assert_eq!(perft(&mut game, 2), 504);
         assert_eq!(perft(&mut game, 3), 7608);
         assert_eq!(perft(&mut game, 4), 130800);
+
+        let rules = Rules::new(false, false);
+        let mut game = Game::new(Layout::Bricks7, deck.clone(), rules);
+        assert_eq!(perft(&mut game, 6), 201744);
 
         Ok(())
     }

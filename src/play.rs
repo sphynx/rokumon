@@ -14,7 +14,6 @@ impl Strategy for RandomAI {
 }
 
 pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl Strategy) -> bool {
-
     println!("Starting position: {}", &game);
 
     fn step(player: &mut impl Strategy, game: &mut Game) -> GameMove<Coord> {

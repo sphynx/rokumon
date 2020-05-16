@@ -377,11 +377,12 @@ impl Game {
                 let from_card = self.board.card_at_mut(from).unwrap();
                 let die = from_card.dice.pop().unwrap();
 
-                // Here, we should check for victory condition
-                // immediately while the die is in flight. If it
-                // leads to the win for the other player, we do
-                // not continue with the rest of the move.
-                let intermediate_result = self.result();
+                // Here, we should check for three-in-a-row victory
+                // condition immediately while the die is in flight.
+                // If it leads to the win for the other player, we set
+                // the game result in between and continue with the
+                // move.
+                let intermediate_result = self.three_in_a_row();
                 if intermediate_result != GameResult::InProgress {
                     // Set the game result.
                     self.result = intermediate_result;
@@ -474,7 +475,7 @@ impl Game {
                 let player = self.current_player_mut();
                 player.dice.push(die);
 
-                self.result = self.result();
+                self.result = self.result_without_no_moves();
             }
 
             Move(_die, from, to) => {
@@ -484,7 +485,7 @@ impl Game {
                 let from_card = self.board.card_at_mut(from).unwrap();
                 from_card.dice.push(die);
 
-                self.result = self.result();
+                self.result = self.result_without_no_moves();
             }
 
             Fight(place) => {
@@ -504,7 +505,7 @@ impl Game {
                 let battle_card = self.board.card_at_mut(place).unwrap();
                 battle_card.dice.insert(insertion_index, die);
 
-                self.result = self.result();
+                self.result = self.result_without_no_moves();
             }
 
             Surprise(from, to) => {
@@ -518,7 +519,7 @@ impl Game {
                     self.player2_surprises -= 1;
                 }
 
-                self.result = self.result();
+                self.result = self.result_without_no_moves();
             }
 
             Submit => {
@@ -529,9 +530,123 @@ impl Game {
 
     /// Caclulates the game result of a particular game state by
     /// checking two victory conditions ("three-in-a-stack" and
-    /// "three-in-a-row").
-    fn result(&self) -> GameResult {
-        // "Three in a Stack" condition.
+    /// "three-in-a-row"). NB: here `mut self` is only needed for
+    /// checking no moves condition (we are basically looking ahead
+    /// for one move, so we need to update self.player1_moves while
+    /// doing so).
+    fn result(&mut self) -> GameResult {
+        // "Three in Stack" condition.
+        let three_in_stack = self.three_in_stack();
+        if three_in_stack != GameResult::InProgress {
+            return three_in_stack;
+        }
+
+        // "Three in a Row" condition.
+        let three_in_a_row = self.three_in_a_row();
+        if three_in_a_row != GameResult::InProgress {
+            return three_in_a_row;
+        }
+
+        // "No moves" condition.
+        self.player1_moves = !self.player1_moves;
+        let result = self.no_moves();
+        self.player1_moves = !self.player1_moves;
+        result
+
+        //GameResult::InProgress
+    }
+
+    fn result_without_no_moves(&mut self) -> GameResult {
+        // "Three in Stack" condition.
+        let three_in_stack = self.three_in_stack();
+        if three_in_stack != GameResult::InProgress {
+            return three_in_stack;
+        }
+
+        // "Three in a Row" condition.
+        let three_in_a_row = self.three_in_a_row();
+        if three_in_a_row != GameResult::InProgress {
+            return three_in_a_row;
+        }
+
+        GameResult::InProgress
+    }
+
+    // TODO: this is a copy of generate_moves with `moves.append()`
+    // replace with `return true` to signalize that there is at least
+    // one move. It's done like this for efficiency reasons and
+    // because it's not trivial to rewrite generate_moves() as
+    // iterator. But we should do so, then we can just lazily check
+    // for this first element.
+    fn has_moves(&self) -> bool {
+        if self.rules.enable_fight_move {
+            let dice: BTreeSet<Die> = self.current_player().dice.iter().cloned().collect();
+            for _ in self.board.empty_cards_iter() {
+                for _ in dice.iter() {
+                    return true;
+                }
+            }
+
+            for (&pos, _) in self.board.cards.iter().filter(|(_, card)| card.dice.len() > 1) {
+                let candidate = GameMove::Fight(pos);
+                if self.validate_move(&candidate).is_ok() {
+                    return true;
+                }
+            }
+        } else {
+            match self.current_player().dice.first() {
+                None => {}
+                Some(_) => {
+                    for _ in self.board.empty_cards_iter() {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        let active_dice = self.board.active_dice_iter(self.player1_moves);
+        let all_positions: Vec<_> = self.board.cards.keys().collect();
+        for (from, die) in active_dice {
+            for to in &all_positions {
+                let candidate = GameMove::Move(die.clone(), *from, **to);
+                if self.validate_move(&candidate).is_ok() {
+                    return true;
+                }
+            }
+        }
+
+        if self.rules.enable_surprise_move {
+            if self.current_player_surprises() == 0 {
+                let (left, right, top, bottom) = self.board.bounding_box();
+                for &from in self.board.cards.keys() {
+                    for x in left - 1..=right + 1 {
+                        for y in top - 1..=bottom + 1 {
+                            let candidate = GameMove::Surprise(from, self.board.new_coord(x, y));
+                            if self.validate_move(&candidate).is_ok() {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        false
+    }
+
+    fn no_moves(&self) -> GameResult {
+        if self.has_moves() {
+            GameResult::InProgress
+        } else {
+            if self.player1_moves {
+                GameResult::SecondPlayerWon
+            } else {
+                GameResult::FirstPlayerWon
+            }
+        }
+    }
+
+    fn three_in_stack(&self) -> GameResult {
         for card in self.board.cards_iter() {
             if card.dice.len() > 2 {
                 if card.dice[0].belongs_to_player1() {
@@ -541,8 +656,10 @@ impl Game {
                 }
             }
         }
+        GameResult::InProgress
+    }
 
-        // "Three in a Row" condition.
+    fn three_in_a_row(&self) -> GameResult {
         for tri in self.board.adj_triples_iter() {
             let die1 = self.board.card_at(&tri.0).and_then(|c| c.top_die());
             let die2 = self.board.card_at(&tri.1).and_then(|c| c.top_die());
@@ -561,7 +678,6 @@ impl Game {
                 _ => continue,
             }
         }
-
         GameResult::InProgress
     }
 
@@ -592,6 +708,10 @@ impl Game {
     // Note: The move generator is supposed to be fast, but now I'm
     // generating moves in a rather naive way. This is an obvious
     // candidate for optimization, if we need any.
+    //
+    // WARNING: please update `has_moves()` if any serious changes are
+    // made to `generate_moves()`.
+    //
     /// Generate all legal moves for current game position.
     pub fn generate_moves(&self) -> Vec<GameMove<Coord>> {
         if self.result != GameResult::InProgress {
@@ -600,10 +720,28 @@ impl Game {
 
         let mut moves = Vec::with_capacity(32);
 
-        let dice: BTreeSet<Die> = self.current_player().dice.iter().cloned().collect();
-        for (&coord, _card) in self.board.empty_cards_iter() {
-            for d in dice.iter() {
-                moves.push(GameMove::Place(d.clone(), coord));
+        if self.rules.enable_fight_move {
+            let dice: BTreeSet<Die> = self.current_player().dice.iter().cloned().collect();
+            for (&coord, _card) in self.board.empty_cards_iter() {
+                for d in dice.iter() {
+                    moves.push(GameMove::Place(d.clone(), coord));
+                }
+            }
+
+            for (&pos, _) in self.board.cards.iter().filter(|(_, card)| card.dice.len() > 1) {
+                let candidate = GameMove::Fight(pos);
+                if self.validate_move(&candidate).is_ok() {
+                    moves.push(candidate);
+                }
+            }
+        } else {
+            match self.current_player().dice.first() {
+                None => {}
+                Some(d) => {
+                    for (&coord, _card) in self.board.empty_cards_iter() {
+                        moves.push(GameMove::Place(d.clone(), coord));
+                    }
+                }
             }
         }
 
@@ -612,15 +750,6 @@ impl Game {
         for (from, die) in active_dice {
             for to in &all_positions {
                 let candidate = GameMove::Move(die.clone(), *from, **to);
-                if self.validate_move(&candidate).is_ok() {
-                    moves.push(candidate);
-                }
-            }
-        }
-
-        if self.rules.enable_fight_move {
-            for (&pos, _) in self.board.cards.iter().filter(|(_, card)| card.dice.len() > 1) {
-                let candidate = GameMove::Fight(pos);
                 if self.validate_move(&candidate).is_ok() {
                     moves.push(candidate);
                 }
@@ -889,6 +1018,35 @@ mod test {
         game.apply_move_str("place r4 at r1c3")?;
         game.apply_move_str("move b5 from r1c2 to r2c1")?;
         game.apply_move_str("move r4 from r1c3 to r2c2")?;
+        assert_eq!(game.result, GameResult::FirstPlayerWon);
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_loss_when_no_possible_moves() -> Fallible<()> {
+        let deck = Deck::ordered("jggjgjj")?;
+        let mut game = Game::new(Layout::Bricks7, deck, Rules::new(false, false));
+
+        game.apply_move_str("place r2 at r2c3")?;
+        game.apply_move_str("place b1 at r1c2")?;
+        game.apply_move_str("move r2 from r2c3 to r1c2")?;
+        game.apply_move_str("place b1 at r1c1")?;
+        game.apply_move_str("place r2 at r2c3")?;
+        game.apply_move_str("place b1 at r1c3")?;
+        game.apply_move_str("place r2 at r2c2")?;
+        game.apply_move_str("move b1 from r1c3 to r2c3")?;
+        game.apply_move_str("move r2 from r2c2 to r1c1")?;
+        game.apply_move_str("place b1 at r1c3")?;
+        game.apply_move_str("place r2 at r2c2")?;
+        game.apply_move_str("move b1 from r1c3 to r2c1")?;
+        game.apply_move_str("move r2 from r2c2 to r2c1")?;
+        game.apply_move_str("place b1 at r2c2")?;
+        game.apply_move_str("move r2 from r1c1 to r2c2")?;
+        game.apply_move_str("move b1 from r1c1 to r1c3")?;
+        game.apply_move_str("move r2 from r2c1 to r1c3")?;
+
+        assert_eq!(game.generate_moves().len(), 0);
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         Ok(())

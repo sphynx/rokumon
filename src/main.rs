@@ -69,7 +69,6 @@ impl FromStr for Opponents {
 
 #[derive(Debug, StructOpt)]
 struct Opt {
-
     /// Run mode (use `play` to play the game). perft is used to test performance of the move generator.
     #[structopt(short, long, default_value = "play", help = "play | perft | par_perft")]
     mode: Mode,
@@ -140,7 +139,7 @@ impl Display for Opt {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "Options: mode={:?}, opponents={:?}, cards={:?}, shuffle={}, layout={:?}, with_fight={}, \
+            "Options: mode={:?}, opponents={:?}, cards={:?}, no_shuffle={}, layout={:?}, with_fight={}, \
              with_surprise={}, ai_duration={:?}, ai_depth={:?}, second_ai_duration={:?}, second_ai_depth={:?}",
             self.mode,
             self.opponents,
