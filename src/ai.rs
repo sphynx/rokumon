@@ -128,14 +128,14 @@ impl Strategy for AlphaBetaAI {
                 println!("AI evaluation: {}", &action.fitness);
                 println!("PV:");
                 let mut game_tmp = game.clone();
-                for (ix, m) in action.path.iter().rev().enumerate() {
-                    let um = game.userify_move(&m);
+                for (ix, m) in action.path.iter().enumerate() {
+                    let um = game_tmp.userify_move(&m);
                     game_tmp.apply_move_unchecked(&m);
                     println!("{}: {}, eval: {}", ix + 1, um, evaluate(&game_tmp));
                 }
                 println!();
 
-                return action.path.last().unwrap().clone();
+                return action.path.first().unwrap().clone();
             };
         }
 
