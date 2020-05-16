@@ -3,7 +3,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use itertools::Itertools;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, BTreeMap};
 
 use crate::card::{Card, Deck, Die};
 use crate::coord::{Coord, UserCoord};
@@ -49,13 +49,13 @@ impl FromStr for Layout {
 #[derive(Debug, Clone)]
 pub struct Board {
     pub grid: Grid,
-    pub cards: HashMap<Coord, Card>,
+    pub cards: BTreeMap<Coord, Card>,
     adj_triples: Vec<(Coord, Coord, Coord)>,
 }
 
 impl Board {
     pub fn new(layout: Layout, deck: Deck) -> Self {
-        let mut cards_at_positions = HashMap::new();
+        let mut cards_at_positions = BTreeMap::new();
         let mut cards = deck.into_iter();
         let grid;
 
