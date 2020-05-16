@@ -1,6 +1,17 @@
 use crate::coord::Coord;
 use crate::game::{Game, GameMove, GameResult};
-use crate::strategy::Strategy;
+
+pub trait Strategy {
+    fn get_move(&mut self, game: &Game) -> GameMove<Coord>;
+}
+
+pub struct RandomAI;
+
+impl Strategy for RandomAI {
+    fn get_move(&mut self, game: &Game) -> GameMove<Coord> {
+        game.random_move()
+    }
+}
 
 pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl Strategy) -> bool {
     fn step(player: &mut impl Strategy, game: &mut Game) -> GameMove<Coord> {

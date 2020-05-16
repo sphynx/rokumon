@@ -1,23 +1,24 @@
 mod ai;
 mod board;
 mod card;
+mod console_ui;
 mod coord;
 mod game;
 mod parsers;
 mod perft;
 mod play;
-mod strategy;
 
 use ai::AlphaBetaAI;
 use board::Layout;
 use card::Deck;
+use console_ui::Human;
 use failure::{bail, Fallible};
 use game::{Game, Rules};
 use perft::*;
+use play::RandomAI;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 use std::time::Instant;
-use strategy::{Human, RandomAI};
 use structopt::StructOpt;
 
 #[derive(Debug)]

@@ -1,14 +1,10 @@
+use crate::ai::AlphaBetaAI;
 use crate::coord::Coord;
 use crate::game::{Game, GameMove};
 use crate::parsers;
-
-use crate::ai::AlphaBetaAI;
+use crate::play::Strategy;
 
 use std::io;
-
-pub trait Strategy {
-    fn get_move(&mut self, game: &Game) -> GameMove<Coord>;
-}
 
 pub struct Human;
 
@@ -55,13 +51,5 @@ impl Strategy for Human {
                 }
             }
         }
-    }
-}
-
-pub struct RandomAI;
-
-impl Strategy for RandomAI {
-    fn get_move(&mut self, game: &Game) -> GameMove<Coord> {
-        game.random_move()
     }
 }

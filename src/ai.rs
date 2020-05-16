@@ -1,7 +1,7 @@
 use crate::card::{DiceColor, Die};
 use crate::coord::Coord;
 use crate::game::{Game, GameMove, GameResult};
-use crate::strategy::Strategy;
+use crate::play::Strategy;
 
 use rubot::{self, Bot, Depth, Logger, ToCompletion};
 
