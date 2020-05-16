@@ -3,6 +3,26 @@
   place move -- it immediately saw the loss in 3 moves, how is that
   possible?)
 
+# Sequence of moves leading to the problematic position:
+
+place r2 at r2c3
+place b3 at r2c2
+move r2 from r2c3 to r2c2
+fight at r2c2
+place r6 at r2c3
+place b1 at r1c2
+
+after that we can run "hint 20" and see that it recommends (tree fully explored)
+move r6 from r2c3 to r2c2
+
+does it mean that it's the best but it already see that it's lost?
+
+with `hint 15` it lists the tree as not completed, but then `place w1 at
+r1c1` leads to completed tree with depth=3 and bot's loss...
+
+# How to turn this into a nice test to see if the recent changes to rubot fixed it?
+
+
 (main-venv) ➜  rokumon git:(master) ✗ target/release/rokumon -o AIHuman -f --ai-duration 15 --shuffle
 Options: depth=5, mode=Play, opponents=AIHuman, cards="gggjjjj", layout=Bricks7, with_fight=true, with_surprise=false
 

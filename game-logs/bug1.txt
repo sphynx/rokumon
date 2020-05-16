@@ -1,0 +1,7 @@
+place r2 at r2c3
+place b3 at r2c2
+move r2 from r2c3 to r2c2
+fight at r2c2
+place r6 at r2c3
+place b1 at r1c2
+hint 15
