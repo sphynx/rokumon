@@ -20,7 +20,8 @@ pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl S
             step(&mut player2, &mut game)
         };
 
-        println!("\n\nPlayed move: {}\n\n", mov);
+        let user_coord_move = game.userify_move(&mov);
+        println!("\n\nPlayed move: {}\n\n", user_coord_move);
         println!("Resulting position:\n{}", game);
     }
 

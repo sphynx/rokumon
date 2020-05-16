@@ -74,6 +74,13 @@ impl FromStr for UserCoord {
     }
 }
 
+impl fmt::Display for UserCoord {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "R{}C{}", self.row, self.card)
+    }
+}
+
+
 impl UserCoord {
     pub fn new(row: u8, card: u8) -> Self {
         UserCoord { row, card }

@@ -22,6 +22,9 @@ r1c1` leads to completed tree with depth=3 and bot's loss...
 
 # How to turn this into a nice test to see if the recent changes to rubot fixed it?
 
+# Repro
+
+cat game-logs/script.txt - |  target/release/rokumon  -o HumanHuman -f --ai-duration 15 --cards="jjjggjg"
 
 (main-venv) ➜  rokumon git:(master) ✗ target/release/rokumon -o AIHuman -f --ai-duration 15 --shuffle
 Options: depth=5, mode=Play, opponents=AIHuman, cards="gggjjjj", layout=Bricks7, with_fight=true, with_surprise=false

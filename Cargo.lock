@@ -408,8 +408,10 @@ dependencies = [
 [[package]]
 name = "rubot"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2e8d1b78fec74de0558433a1ef2805791f3abb6ebad292196f88a47fa1c91f9"
+source = "git+https://github.com/lcnr/rubot#ea57f8cf0255e9ed1ee0b84c97bbbf152da4eba4"
+dependencies = [
+ "tapir",
+]
 
 [[package]]
 name = "rustc-demangle"
@@ -522,6 +524,12 @@ dependencies = [
  "syn",
  "unicode-xid",
 ]
+
+[[package]]
+name = "tapir"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5405759182f9a9777df07b6bef817b9c20f39c272df82f81bb0b586ae12903f4"
 
 [[package]]
 name = "textwrap"

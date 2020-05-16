@@ -117,7 +117,7 @@ impl Strategy for AlphaBetaAI {
         macro_rules! run_ai_until {
             ($condition:expr) => {
                 let mut logger = Logger::new($condition);
-                let res = self.bot.select(&game, &mut logger).unwrap();
+                let action = self.bot.detailed_select(&game, &mut logger).unwrap();
                 println!(
                     "AI log: steps: {}, depth: {}, completed: {}, duration: {:?}",
                     logger.steps(),
@@ -125,7 +125,16 @@ impl Strategy for AlphaBetaAI {
                     logger.completed(),
                     logger.duration()
                 );
-                return res;
+                println!("AI evaluation: {}", &action.fitness);
+                println!("PV:");
+                let mut game_tmp = game.clone();
+                for m in action.path.iter().rev() {
+                    let um = game.userify_move(&m);
+                    game_tmp.apply_move_unchecked(&m);
+                    println!("{}, eval: {}", um, evaluate(&game_tmp));
+                }
+
+                return action.path.last().unwrap().clone();
             };
         }
 
@@ -142,19 +151,6 @@ impl Strategy for AlphaBetaAI {
 
                 return GameMove::Place(Die::new(DiceColor::Red, 2), coord.0);
             }
-/*            1 => {
-                // We are just starting, let's play a random `place`
-                // in better empty squares.
-                let coord = game
-                    .board
-                    .empty_cards_iter()
-                    .map(|(coord, _card)| (*coord, game.board.num_of_adjacent_triples(*coord)))
-                    .max_by_key(|(_coord, n)| *n)
-                    .unwrap();
-
-                return GameMove::Place(Die::new(DiceColor::Black, 5), coord.0);
-            }
-*/
             _ => {
                 // Now just run alpha-beta.
                 if self.duration != 0 {

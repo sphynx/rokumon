@@ -32,7 +32,7 @@ impl Strategy for Human {
                 }
                 let mut ai = AlphaBetaAI::with_duration(game.player1_moves, dur);
                 let m = ai.get_move(game);
-                println!("AI recommends: {}", m);
+                println!("AI recommends: {}", game.userify_move(&m));
             } else {
                 match parsers::parse_move(input.trim_end()) {
                     Ok(mov) => match game.convert_move_coords(&mov) {

@@ -244,15 +244,14 @@ impl Board {
             .filter(move |c| Self::distance(&self.grid, c, &pos) == 1 && *c != &exclude)
     }
 
-    /// Convert coordinates in the GameMove (from user coordinates to
-    /// internal coordinates).
+    /// Convert from user coordinates to internal coordinates in a GameMove.
     pub fn convert_move_coords(&self, m: &GameMove<UserCoord>) -> Fallible<GameMove<Coord>> {
         fn go(board: &Board, uc: &UserCoord) -> Fallible<Coord> {
             board.convert_coordinates(uc)
         }
 
         // Sadly, there are no functors in Rust so we have to apply
-        // `from_user_coord` to "holes" in GameMove by hand.
+        // a function to "holes" in GameMove by hand.
         use GameMove::*;
         Ok(match m {
             Place(d, uc) => Place(d.clone(), go(self, uc)?),
@@ -261,6 +260,24 @@ impl Board {
             Surprise(uc_from, to) => Surprise(go(self, uc_from)?, *to),
             Submit => Submit,
         })
+    }
+
+    /// Convert from internal coordinates to user coordinates in a GameMove.
+    pub fn convert_move_coords_to_user(&self, m: &GameMove<Coord>) -> GameMove<UserCoord> {
+        fn go(board: &Board, c: &Coord) -> UserCoord {
+            board.convert_coordinates_to_user(c)
+        }
+
+        // Sadly, there are no functors in Rust so we have to apply
+        // a function to "holes" in GameMove by hand.
+        use GameMove::*;
+        match m {
+            Place(d, uc) => Place(d.clone(), go(self, uc)),
+            Move(d, uc_from, uc_to) => Move(d.clone(), go(self, uc_from), go(self, uc_to)),
+            Fight(uc) => Fight(go(self, uc)),
+            Surprise(uc_from, to) => Surprise(go(self, uc_from), *to),
+            Submit => Submit,
+        }
     }
 
     /// Checks if three positions are adjacent to each other.
@@ -340,6 +357,21 @@ impl Board {
                 .ok_or_else(|| format_err!("Card is out of bounds: {}", user_coord.card))
         } else {
             bail!("Row is out of bounds: {}", user_coord.row);
+        }
+    }
+
+    /// Convert internal coordinates (hex/square) to user visible coordinates (row
+    /// + card) in presence of given board.
+    pub fn convert_coordinates_to_user(&self, coord: &Coord) -> UserCoord {
+        let top_row = self.top_row(); // this is considered R1.
+        let user_row = coord.y - top_row + 1;
+
+        let leftmost_card = self.row_positions_iter(coord.y).min_by_key(|c| c.x).unwrap().x; // this is considered C1
+        let user_card = coord.x - leftmost_card + 1;
+
+        UserCoord {
+            row: user_row as u8,
+            card: user_card as u8,
         }
     }
 

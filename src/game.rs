@@ -95,7 +95,7 @@ impl FromStr for GameMove<UserCoord> {
     }
 }
 
-impl fmt::Display for GameMove<Coord> {
+impl<T: fmt::Display> fmt::Display for GameMove<T>  {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use GameMove::*;
         match self {
@@ -575,6 +575,11 @@ impl Game {
     /// Convert move coordinates from `UserCoord` to `Coord`.
     pub fn convert_move_coords(&self, m: &GameMove<UserCoord>) -> Fallible<GameMove<Coord>> {
         self.board.convert_move_coords(m)
+    }
+
+    /// Convert move coordinates from `Coord` to `UserCoord`.
+    pub fn userify_move(&self, m: &GameMove<Coord>) -> GameMove<UserCoord> {
+        self.board.convert_move_coords_to_user(m)
     }
 
     /// Returns a random move (uniform distribution).

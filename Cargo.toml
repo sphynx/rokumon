@@ -11,7 +11,7 @@ failure = "0.1"
 nom = "5"
 structopt = "0.3"
 rayon = "1.3"
-rubot = "0.2"
+rubot = { git = "https://github.com/lcnr/rubot" }
 
 [profile.release]
 debug = true
