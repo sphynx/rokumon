@@ -2,6 +2,8 @@
 
 An AI for playing [Rokumon game](https://boardgamegeek.com/thread/2380440/wip-rokumon-2020-9-card-design-contest-contest-rea) by Charles Ward.
 
+Rules of the game can also be found in this repo in [docs/rules.pdf](docs/rules.pdf)
+
 # How to build, install and play
 
 It's written in Rust programming language, so you have to run usual invocations for setting up Rust:
