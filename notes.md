@@ -10,15 +10,6 @@ place. If we ignore the order -- this will be eliminated.
 
 Generate an SVG image or something.
 
-# Provide a REPL for actually playing the game
-
-Perhaps we will need to have some better text UI for that. Not sure
-how to display the card position in text... ASCII graphics seems to be
-too much work.
-
-`rustyline` looks like a good way to do REPL:
-https://crates.io/crates/rustyline
-
 # Experiment with performance
 
 We already have basic profiling with FlameGraph and dtrace working on
@@ -61,13 +52,6 @@ perft implementation to `shakmaty`
 
 If Web, we can potentially play with WebAssembly here.
 
-# Figure out how to convert hex coord to brick-shaped rectangles
-  (cards). We need back and forth translation.
-
-# Figure out why I don't have full resolution on Retina.
-https://github.com/ggez/ggez/issues/587
-
-Looks complicated, perhaps it won't work at all with ggez :)
 
 # DONE Figure out how to generate a new board using hex coordinates:
 
@@ -167,4 +151,13 @@ of random game, who is expected to win it, etc.
 
 We can also experiment with different distributions, but for start the
 uniform distribution over all possible moves should be fine.
+
+# DONE Provide a REPL for actually playing the game
+
+Perhaps we will need to have some better text UI for that. Not sure
+how to display the card position in text... ASCII graphics seems to be
+too much work.
+
+`rustyline` looks like a good way to do REPL:
+https://crates.io/crates/rustyline
 
