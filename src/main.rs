@@ -156,7 +156,7 @@ impl Display for Opt {
     }
 }
 
-fn play_game(opt: &Opt, rules: &Rules) -> bool {
+fn play_game(opt: &Opt, rules: &Rules) -> i8 {
     let cards_spec = opt.cards.as_str();
     let deck = if opt.no_shuffle {
         Deck::ordered(cards_spec)
@@ -205,13 +205,22 @@ fn main() -> Fallible<()> {
         }
         Mode::Match => {
             let n = opt.samples;
-            let mut player1_wins = 0;
-            for _ in 0..n {
-                if play_game(&opt, &rules) {
-                    player1_wins += 1;
+
+            println!("Starting a match of {} games", n);
+            let mut wins = 0;
+            let mut draws = 0;
+            let mut losses = 0;
+            for ix in 0..n {
+                println!("Playing game {}", ix + 1);
+                let res = play_game(&opt, &rules);
+                match res {
+                    1 => wins += 1,
+                    0 => draws += 1,
+                    -1 => losses += 1,
+                    _ => panic!("Unexpected game result: {}", res),
                 }
             }
-            println!("Played {} games: {} : {}", n, player1_wins, n - player1_wins);
+            println!("Played {} games: {} : {} : {}", n, wins, draws, losses);
         }
         Mode::Perft | Mode::ParallelPerft => {
             let max_depth = opt.perft_depth;

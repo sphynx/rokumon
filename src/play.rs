@@ -15,7 +15,7 @@ impl Strategy for RandomAI {
     }
 }
 
-pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl Strategy) -> bool {
+pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl Strategy) -> i8 {
     println!("Starting position: {}", &game);
 
     fn step(player: &mut impl Strategy, game: &mut Game) -> GameMove<Coord> {
@@ -29,9 +29,9 @@ pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl S
     }
 
     let mut positions: HashMap<GameFeatures, u8> = HashMap::new();
-    let mut triple_repetion = false;
+    let mut draw = false;
 
-    while !game.is_game_over() && !triple_repetion {
+    while !game.is_game_over() && !draw {
         let mov = if game.player1_moves {
             step(&mut player1, &mut game)
         } else {
@@ -43,11 +43,11 @@ pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl S
         let counter = positions.entry(game.defining_features()).or_insert(0);
         *counter += 1;
         if *counter == 3 {
-            triple_repetion = true;
+            draw = true;
         }
     }
 
-    if triple_repetion {
+    if draw {
         println!("Game over! Drawn in {} moves.", game.history.len());
     } else {
         println!(
@@ -66,5 +66,12 @@ pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl S
         println!("{}: {}", ix + 1, game.userify_move(&m));
     }
 
-    game.result == GameResult::FirstPlayerWon
+    if draw {
+        0
+    } else if game.result == GameResult::FirstPlayerWon {
+        1
+    } else {
+        -1
+    }
+
 }
