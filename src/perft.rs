@@ -8,7 +8,7 @@ use crate::game::{Game, GameMove};
 /// memory, but can be parallelized.
 pub fn parallel_perft(game: &Game, depth: usize) -> usize {
     fn go(game: &Game, depth: usize, m: &GameMove<Coord>) -> usize {
-        let mut copy_game = (*game).clone();
+        let mut copy_game = game.clone();
         copy_game.apply_move_unchecked(m);
         parallel_perft(&copy_game, depth - 1)
     }

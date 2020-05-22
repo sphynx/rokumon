@@ -20,5 +20,12 @@ rubot = { git = "https://github.com/lcnr/rubot" }
 # [patch.crates-io]
 # rubot = { path = "../rubot" }
 
+[dev-dependencies]
+criterion = "0.3"
+
 [profile.release]
 debug = true
+
+[[bench]]
+name = "perft"
+harness = false
