@@ -73,7 +73,10 @@ impl Strategy for Human {
                         // Try to parse as a move.
                         match parsers::parse_move(input.trim_end()) {
                             Ok(mov) => match game.convert_move_coords(&mov) {
-                                Ok(m) => break m,
+                                Ok(m) => {
+                                    rl.save_history("history.txt").unwrap();
+                                    break m;
+                                }
                                 Err(_) => println!("[ERR] invalid user coordinate."),
                             },
                             Err(msg) => println!("[ERR] {}. Use `help` to see how to enter moves", msg),
@@ -83,15 +86,15 @@ impl Strategy for Human {
                 }
 
                 Err(ReadlineError::Interrupted) => {
-                    println!("CTRL-C");
+                    println!("Interrupted. Good bye.");
                     exit(0);
                 }
                 Err(ReadlineError::Eof) => {
-                    println!("CTRL-D");
+                    println!("Good bye.");
                     exit(0);
                 }
                 Err(err) => {
-                    println!("EГГОГ: {:?}", err);
+                    println!("Exiting. EГГОГ: {:?}", err);
                     exit(1);
                 }
             }
