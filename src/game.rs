@@ -553,8 +553,6 @@ impl Game {
         let result = self.no_moves();
         self.player1_moves = !self.player1_moves;
         result
-
-        //GameResult::InProgress
     }
 
     fn result_without_no_moves(&mut self) -> GameResult {

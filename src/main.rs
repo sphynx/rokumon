@@ -139,12 +139,13 @@ impl Display for Opt {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "Options: mode={:?}, opponents={:?}, cards={:?}, no_shuffle={}, layout={:?}, with_fight={}, \
+            "Options: mode={:?}, opponents={:?}, cards={:?}, no_shuffle={}, samples={}, layout={:?}, with_fight={}, \
              with_surprise={}, ai_duration={:?}, ai_depth={:?}, second_ai_duration={:?}, second_ai_depth={:?}",
             self.mode,
             self.opponents,
             self.cards,
             self.no_shuffle,
+            self.samples,
             self.layout,
             self.enable_fight_move,
             self.enable_surprise_move,
@@ -194,6 +195,34 @@ fn mk_bot(for_first_player: bool, opt: &Opt) -> AlphaBetaAI {
     }
 }
 
+fn play_match(opt: &Opt, rules: &Rules) {
+    let n = opt.samples;
+    println!("Starting a match of {} games", n);
+    let mut wins = 0;
+    let mut draws = 0;
+    let mut losses = 0;
+    for ix in 0..n {
+        println!();
+        println!("Starting game {}", ix + 1);
+        let res = play_game(opt, rules);
+        match res {
+            1 => wins += 1,
+            0 => draws += 1,
+            -1 => losses += 1,
+            _ => panic!("Unexpected game result: {}", res),
+        }
+        println!(
+            "Match status so far: played {} games: {} : {} : {}",
+            ix + 1,
+            wins,
+            draws,
+            losses
+        );
+        println!();
+    }
+    println!("Played {} games in total: {} : {} : {}", n, wins, draws, losses);
+}
+
 fn main() -> Fallible<()> {
     let opt = Opt::from_args();
     println!("{}", opt);
@@ -204,23 +233,7 @@ fn main() -> Fallible<()> {
             play_game(&opt, &rules);
         }
         Mode::Match => {
-            let n = opt.samples;
-
-            println!("Starting a match of {} games", n);
-            let mut wins = 0;
-            let mut draws = 0;
-            let mut losses = 0;
-            for ix in 0..n {
-                println!("Playing game {}", ix + 1);
-                let res = play_game(&opt, &rules);
-                match res {
-                    1 => wins += 1,
-                    0 => draws += 1,
-                    -1 => losses += 1,
-                    _ => panic!("Unexpected game result: {}", res),
-                }
-            }
-            println!("Played {} games: {} : {} : {}", n, wins, draws, losses);
+            play_match(&opt, &rules);
         }
         Mode::Perft | Mode::ParallelPerft => {
             let max_depth = opt.perft_depth;
