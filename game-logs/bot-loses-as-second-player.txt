@@ -1,0 +1,113 @@
+# A game where I've beaten the bot as a second player.
+
+➜  rokumon git:(master) target/release/rokumon -o aihuman --ai-duration 10 -f
+
+Options: mode=Play, opponents=AIHuman, cards="gggjjjj", no_shuffle=false, samples=10, layout=Bricks7, with_fight=true, with_surprise=false, ai_duration=Some(10), ai_depth=None, second_ai_duration=None, second_ai_depth=None
+Starting position:
+Jade[] Jade[] Jade[]
+Jade[] Gold[] Gold[] Gold[]
+Player 1: [r2, r2, r4, r6]
+Player 2: [b1, b3, b3, b5, w1]
+To move: Player 1
+
+Played move: place r2 at r2c3
+Your turn, please enter your move. For move syntax type `help` or `?`. For current game position type `pos`.
+> place b3 at r1c2
+Played move: place b3 at r1c2
+Running AI with duration 10s...
+AI log: steps: 423866, depth: 8, completed: false, duration: 10.00009736s
+AI evaluation: -1
+PV:
+1: place r4 at r1c1, eval: 2
+2: place b5 at r2c4, eval: 1
+3: place r2 at r2c2, eval: 3
+4: move b3 from r1c2 to r2c2, eval: -1
+5: move r4 from r1c1 to r2c3, eval: -1
+6: place b1 at r2c1, eval: -2
+7: place r6 at r1c1, eval: -1
+8: move b5 from r2c4 to r1c1, eval: -3
+9: fight at r1c1, eval: 0
+10: place b3 at r1c2, eval: -1
+
+Played move: place r4 at r1c1
+Your turn, please enter your move. For move syntax type `help` or `?`. For current game position type `pos`.
+> move b3 from r1c2 to r2c3
+Played move: move b3 from r1c2 to r2c3
+Running AI with duration 10s...
+AI log: steps: 436282, depth: 8, completed: false, duration: 10.000090589s
+AI evaluation: -2
+PV:
+1: fight at r2c3, eval: -1
+2: place b3 at r1c2, eval: -2
+3: place r6 at r2c2, eval: 0
+4: place w1 at r2c1, eval: -1
+5: move r4 from r1c1 to r2c3, eval: 3
+6: move w1 from r2c1 to r2c2, eval: -1
+7: place r2 at r2c1, eval: 0
+8: place b5 at r2c4, eval: -1
+9: fight at r2c2, eval: 0
+10: move b5 from r2c4 to r2c1, eval: -2
+
+Played move: fight at r2c3
+Your turn, please enter your move. For move syntax type `help` or `?`. For current game position type `pos`.
+> pos
+
+Jade[r4] Jade[] Jade[]
+Jade[] Gold[] Gold[b3] Gold[]
+Player 1: [r2, r6, r2]
+Player 2: [b1, b3, b5, w1]
+To move: Player 2
+
+> place b1 at r2c2
+Played move: place b1 at r2c2
+Running AI with duration 10s...
+AI log: steps: 469336, depth: 11, completed: false, duration: 10.000120226s
+AI evaluation: -inf
+PV:
+1: move r4 from r1c1 to r2c3, eval: 1
+2: place b3 at r1c1, eval: 0
+3: move r4 from r2c3 to r1c3, eval: -4
+4: place b5 at r2c1, eval: -inf
+
+Played move: move r4 from r1c1 to r2c3
+Your turn, please enter your move. For move syntax type `help` or `?`. For current game position type `pos`.
+> place b3 at r1c2
+Played move: place b3 at r1c2
+Running AI with duration 10s...
+AI log: steps: 33314, depth: 10, completed: true, duration: 748.624587ms
+AI evaluation: -inf
+PV:
+1: place r6 at r2c1, eval: 1
+2: place b5 at r1c1, eval: 0
+3: move r4 from r2c3 to r2c1, eval: -4
+4: place w1 at r1c3, eval: -inf
+
+Played move: place r6 at r2c1
+Your turn, please enter your move. For move syntax type `help` or `?`. For current game position type `pos`.
+> place b5 at r1c3
+Played move: place b5 at r1c3
+Running AI with duration 10s...
+AI log: steps: 45, depth: 2, completed: true, duration: 1.11951ms
+AI evaluation: -inf
+PV:
+1: move r6 from r2c1 to r2c2, eval: 4
+2: place w1 at r1c1, eval: -inf
+
+Played move: move r6 from r2c1 to r2c2
+Your turn, please enter your move. For move syntax type `help` or `?`. For current game position type `pos`.
+> place w1 at r1c1
+Played move: place w1 at r1c1
+Game over! Second player won in 12 moves.
+Moves history:
+1: place r2 at r2c3
+2: place b3 at r1c2
+3: place r4 at r1c1
+4: move b3 from r1c2 to r2c3
+5: fight at r2c3
+6: place b1 at r2c2
+7: move r4 from r1c1 to r2c3
+8: place b3 at r1c2
+9: place r6 at r2c1
+10: place b5 at r1c3
+11: move r6 from r2c1 to r2c2
+12: place w1 at r1c1
