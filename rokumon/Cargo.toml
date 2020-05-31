@@ -8,7 +8,7 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-rand = "0.7"
+rand = { version = "0.7", features = ["wasm-bindgen"] }
 itertools = "0.9"
 failure = "0.1"
 rubot = "0.2"

@@ -88,16 +88,6 @@ pub enum GameMove<C> {
     Submit,
 }
 
-/*
-impl FromStr for GameMove<UserCoord> {
-    type Err = failure::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        parsers::parse_move(s)
-    }
-}
-*/
-
 impl<T: fmt::Display> fmt::Display for GameMove<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use GameMove::*;
@@ -688,14 +678,6 @@ impl Game {
         }
         GameResult::InProgress
     }
-
-    /*
-        pub fn apply_move_str(&mut self, move_str: &str) -> Fallible<Option<FightResult>> {
-            let user_move = move_str.parse()?;
-            let converted_move = self.convert_move_coords(&user_move)?;
-            self.apply_move(&converted_move)
-        }
-    */
 
     /// Convert move coordinates from `UserCoord` to `Coord`.
     pub fn convert_move_coords(&self, m: &GameMove<UserCoord>) -> Fallible<GameMove<Coord>> {
