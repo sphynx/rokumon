@@ -2,14 +2,14 @@ use rand::seq::SliceRandom;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::fmt;
-use std::str::FromStr;
+// use std::str::FromStr;
 
 use failure::{bail, ensure, format_err, Fallible};
 
 use crate::board::{Board, Layout};
 use crate::card::{Card, Deck, DiceColor, Die};
 use crate::coord::{Coord, UserCoord};
-use crate::parsers;
+// use crate::parsers;
 
 /// A player. Has a name and a stock of dice.
 #[derive(Debug, Clone)]
@@ -88,6 +88,7 @@ pub enum GameMove<C> {
     Submit,
 }
 
+/*
 impl FromStr for GameMove<UserCoord> {
     type Err = failure::Error;
 
@@ -95,6 +96,7 @@ impl FromStr for GameMove<UserCoord> {
         parsers::parse_move(s)
     }
 }
+*/
 
 impl<T: fmt::Display> fmt::Display for GameMove<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -350,7 +352,14 @@ impl Game {
     /// Applies a move to the current game state.
     pub fn apply_move(&mut self, game_move: &GameMove<Coord>) -> Fallible<Option<FightResult>> {
         self.validate_move(game_move)?;
+
         Ok(self.apply_move_unchecked(game_move))
+    }
+
+    /// Applies a move in the user coordinates to the current game state.
+    pub fn apply_user_move(&mut self, user_move: &GameMove<UserCoord>) -> Fallible<Option<FightResult>> {
+        let game_move = self.convert_move_coords(user_move)?;
+        self.apply_move(&game_move)
     }
 
     /// Applies a move to the current game state (without validation).
@@ -680,12 +689,13 @@ impl Game {
         GameResult::InProgress
     }
 
-    #[allow(unused)]
-    pub fn apply_move_str(&mut self, move_str: &str) -> Fallible<Option<FightResult>> {
-        let user_move = move_str.parse()?;
-        let converted_move = self.convert_move_coords(&user_move)?;
-        self.apply_move(&converted_move)
-    }
+    /*
+        pub fn apply_move_str(&mut self, move_str: &str) -> Fallible<Option<FightResult>> {
+            let user_move = move_str.parse()?;
+            let converted_move = self.convert_move_coords(&user_move)?;
+            self.apply_move(&converted_move)
+        }
+    */
 
     /// Convert move coordinates from `UserCoord` to `Coord`.
     pub fn convert_move_coords(&self, m: &GameMove<UserCoord>) -> Fallible<GameMove<Coord>> {
@@ -809,6 +819,73 @@ mod test {
     use super::*;
     use failure::Fallible;
 
+    macro_rules! submit {
+        () => {
+            &GameMove::Submit
+        };
+    }
+
+    macro_rules! place {
+        (r, $val:literal => $row:literal, $card:literal) => {
+            &GameMove::Place(Die::new(DiceColor::Red, $val), UserCoord::new($row, $card))
+        };
+        (b, $val:literal => $row:literal, $card:literal) => {
+            &GameMove::Place(Die::new(DiceColor::Black, $val), UserCoord::new($row, $card))
+        };
+        (w, $val:literal => $row:literal, $card:literal) => {
+            &GameMove::Place(Die::new(DiceColor::White, $val), UserCoord::new($row, $card))
+        };
+    }
+
+    macro_rules! fight {
+        ($row:literal, $card:literal) => {
+            &GameMove::Fight(UserCoord::new($row, $card))
+        };
+    }
+
+    macro_rules! mov {
+        (r, $val:literal => $from_row:literal, $from_card:literal => $to_row:literal, $to_card:literal) => {
+            &GameMove::Move(
+                Die::new(DiceColor::Red, $val),
+                UserCoord::new($from_row, $from_card),
+                UserCoord::new($to_row, $to_card),
+            )
+        };
+
+        (b, $val:literal => $from_row:literal, $from_card:literal => $to_row:literal, $to_card:literal) => {
+            &GameMove::Move(
+                Die::new(DiceColor::Black, $val),
+                UserCoord::new($from_row, $from_card),
+                UserCoord::new($to_row, $to_card),
+            )
+        };
+
+        (w, $val:literal => $from_row:literal, $from_card:literal => $to_row:literal, $to_card:literal) => {
+            &GameMove::Move(
+                Die::new(DiceColor::White, $val),
+                UserCoord::new($from_row, $from_card),
+                UserCoord::new($to_row, $to_card),
+            )
+        };
+    }
+
+    macro_rules! surprise {
+        ($from_row:literal, $from_card:literal => $to_x:literal, $to_y:literal) => {
+            &GameMove::Surprise(
+                UserCoord::new($from_row, $from_card),
+                Coord::new_hex($to_x, $to_y),
+            )
+        };
+    }
+
+    macro_rules! apply_moves {
+        ($game:ident, $($m:expr),+) => {
+            $(
+                $game.apply_user_move($m)?;
+            )+
+        };
+    }
+
     #[test]
     fn test_validity_of_place() -> Fallible<()> {
         // TODO: this test is somewhat limited since now we are only
@@ -903,15 +980,13 @@ mod test {
 
         // Submit leads to loss.
         let mut game = Game::new(Layout::Bricks7, Deck::seven_shuffled(), Default::default());
-
         assert_eq!(game.result, GameResult::InProgress);
-        game.apply_move_str("submit")?;
+        apply_moves!(game, submit!());
         assert_eq!(game.result, GameResult::SecondPlayerWon);
 
         // Submit leads to loss #2.
         let mut game = Game::new(Layout::Bricks7, Deck::seven_shuffled(), Default::default());
-        game.apply_move_str("place r2 at r1c1")?;
-        game.apply_move_str("submit")?;
+        apply_moves!(game, place!(r, 2 => 1, 1), submit!());
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         let layout = Layout::Bricks7;
@@ -919,10 +994,13 @@ mod test {
 
         // Fight reduces number of dice on cards.
         let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
-        game.apply_move_str("place r2 at r1c1")?;
-        game.apply_move_str("place b1 at r2c1")?;
-        game.apply_move_str("move r2 from r1c1 to r2c1")?;
-        game.apply_move_str("fight at r2c1")?;
+        apply_moves!(
+            game,
+            place!(r, 2 => 1, 1),
+            place!(b, 1 => 2, 1),
+            mov!(r, 2 => 1, 1 => 2, 1),
+            fight!(2, 1)
+        );
         let card = game.board.card_at(&c(0, 0)).unwrap();
         assert_eq!(card.dice.len(), 1);
         assert_eq!(card.dice[0].value, 2);
@@ -930,88 +1008,110 @@ mod test {
         // Fight reduces number of dice on cards.
         // White 1 beats red 6.
         let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
-        game.apply_move_str("place r6 at r1c1")?;
-        game.apply_move_str("place w1 at r2c1")?;
-        game.apply_move_str("move r6 from r1c1 to r2c1")?;
-        game.apply_move_str("fight at r2c1")?;
+        apply_moves!(
+            game,
+            place!(r, 6 => 1, 1),
+            place!(w, 1 => 2, 1),
+            mov!(r, 6 => 1, 1 => 2, 1),
+            fight!(2, 1)
+        );
         let card = game.board.card_at(&c(0, 0)).unwrap();
         assert_eq!(card.dice.len(), 1);
         assert_eq!(card.dice[0].value, 1);
 
         // Simplest 3-in-a-row win.
         let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
-        game.apply_move_str("place r6 at r1c1")?;
-        game.apply_move_str("place w1 at r2c1")?;
-        game.apply_move_str("place r4 at r1c2")?;
-        game.apply_move_str("place b3 at r2c2")?;
-        game.apply_move_str("place r2 at r1c3")?;
+        apply_moves!(
+            game,
+            place!(r, 6 => 1, 1),
+            place!(w, 1 => 2, 1),
+            place!(r, 4 => 1, 2),
+            place!(b, 3 => 2, 2),
+            place!(r, 2 => 1, 3)
+        );
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         // 3-in-a-row doesn't count if it's adjacent.
         let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
-        game.apply_move_str("place r6 at r2c1")?;
-        game.apply_move_str("place w1 at r1c1")?;
-        game.apply_move_str("place r4 at r2c2")?;
-        game.apply_move_str("place b3 at r1c2")?;
-        game.apply_move_str("place r2 at r2c4")?;
+
+        apply_moves!(
+            game,
+            place!(r, 6 => 2, 1),
+            place!(w, 1 => 1, 1),
+            place!(r, 4 => 2, 2),
+            place!(b, 3 => 1, 2),
+            place!(r, 2 => 2, 4)
+        );
         assert_eq!(game.result, GameResult::InProgress);
 
         // 3-in-a-row for newly built line.
         let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
-        game.apply_move_str("place r6 at r1c1")?;
-        game.apply_move_str("place w1 at r2c2")?;
-        game.apply_move_str("place r4 at r2c1")?;
-        game.apply_move_str("surprise from r2c4 to <2,-2,0>")?;
-        game.apply_move_str("place r2 at r1c1")?;
+
+        apply_moves!(
+            game,
+            place!(r, 6 => 1, 1),
+            place!(w, 1 => 2, 2),
+            place!(r, 4 => 2, 1),
+            surprise!(2, 4 => 2, -2),
+            place!(r, 2 => 1, 1)
+        );
+
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         // Uncovering a die with 3-in-a-row leads to win.
         let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
-        game.apply_move_str("place r6 at r2c1")?;
-        game.apply_move_str("place w1 at r1c1")?;
-        game.apply_move_str("place r4 at r2c2")?;
-        game.apply_move_str("move w1 from r1c1 to r2c2")?;
-        game.apply_move_str("place r2 at r2c3")?;
+        apply_moves!(
+            game,
+            place!(r, 6 => 2, 1),
+            place!(w, 1 => 1, 1),
+            place!(r, 4 => 2, 2),
+            mov!(w, 1 => 1, 1 => 2, 2),
+            place!(r, 2 => 2, 3)
+        );
         assert_eq!(game.result, GameResult::InProgress);
-        game.apply_move_str("move w1 from r2c2 to r1c1")?;
+        game.apply_user_move(mov!(w, 1 => 2, 2 => 1, 1))?;
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         // No move between the same card kinds is allowed.
         let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
-        game.apply_move_str("place r6 at r2c1")?;
-        game.apply_move_str("place w1 at r1c1")?;
-        assert!(game.apply_move_str("move r6 from r2c1 to r2c2").is_err());
+        apply_moves!(game, place!(r, 6 => 2, 1), place!(w, 1 => 1, 1));
+        assert!(game.apply_user_move(mov!(r, 6 => 2, 1 => 2, 2)).is_err());
 
         // Simplest 3-in-a-stack win.
         let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
-        game.apply_move_str("place r6 at r2c1")?;
-        game.apply_move_str("place w1 at r2c2")?;
-        game.apply_move_str("place r4 at r1c1")?;
-        game.apply_move_str("place b1 at r1c2")?;
-        game.apply_move_str("move r4 from r1c1 to r2c1")?;
-        game.apply_move_str("move b1 from r1c2 to r2c2")?;
-        game.apply_move_str("place r2 at r1c1")?;
-        game.apply_move_str("place b3 at r1c2")?;
+        apply_moves!(
+            game,
+            place!(r, 6 => 2, 1),
+            place!(w, 1 => 2, 2),
+            place!(r, 4 => 1, 1),
+            place!(b, 1 => 1, 2),
+            mov!(r, 4 => 1, 1 => 2, 1),
+            mov!(b, 1 => 1, 2 => 2, 2),
+            place!(r, 2 => 1, 1),
+            place!(b, 3 => 1, 2)
+        );
         assert_eq!(game.result, GameResult::InProgress);
-        game.apply_move_str("move r2 from r1c1 to r2c1")?;
+        game.apply_user_move(mov!(r, 2 => 1, 1 => 2, 1))?;
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         // Simultaneous 3-in-a-row for both players.
         // (plus a stack and actually 4-in-a-row)
-
         let deck = Deck::ordered("gggjjjg")?;
         let mut game = Game::new(layout, deck, Default::default());
-        game.apply_move_str("place r2 at r2c1")?;
-        game.apply_move_str("place b1 at r1c1")?;
-        game.apply_move_str("place r2 at r2c2")?;
-        game.apply_move_str("move b1 from r1c1 to r2c2")?;
-        game.apply_move_str("place r4 at r2c3")?;
-        game.apply_move_str("place b3 at r1c3")?;
-        game.apply_move_str("place r6 at r2c4")?;
-        game.apply_move_str("place b3 at r1c1")?;
-        game.apply_move_str("move r6 from r2c4 to r2c3")?;
+        apply_moves!(
+            game,
+            place!(r, 2 => 2, 1),
+            place!(b, 1 => 1, 1),
+            place!(r, 2 => 2, 2),
+            mov!(b, 1 => 1, 1 => 2, 2),
+            place!(r, 4 => 2, 3),
+            place!(b, 3 => 1, 3),
+            place!(r, 6 => 2, 4),
+            place!(b, 3 => 1, 1),
+            mov!(r, 6 => 2, 4 => 2, 3)
+        );
         assert_eq!(game.result, GameResult::InProgress);
-        game.apply_move_str("move b1 from r2c2 to r1c2")?;
+        game.apply_user_move(mov!(b, 1 => 2, 2 => 1, 2))?;
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         Ok(())
@@ -1022,9 +1122,9 @@ mod test {
         let deck = Deck::ordered("gggjjjj")?;
         let mut game = Game::new(Layout::Bricks7, deck, Default::default());
         assert_eq!(game.generate_moves().len(), 56);
-        game.apply_move_str("place r2 at r2c1")?;
+        apply_moves!(game, place!(r, 2 => 2, 1));
         assert_eq!(game.generate_moves().len(), 59);
-        game.apply_move_str("place b1 at r1c1")?;
+        apply_moves!(game, place!(b, 1 => 1, 1));
         assert_eq!(game.generate_moves().len(), 53);
         Ok(())
     }
@@ -1033,13 +1133,16 @@ mod test {
     pub fn test_applied_moved_to_finished_game_bug() -> Fallible<()> {
         let deck = Deck::ordered("gggjjjj")?;
         let mut game = Game::new(Layout::Bricks7, deck, Default::default());
-        game.apply_move_str("place r2 at r2c3")?;
-        game.apply_move_str("place b3 at r2c1")?;
-        game.apply_move_str("place r6 at r2c4")?;
-        game.apply_move_str("place b5 at r1c2")?;
-        game.apply_move_str("place r4 at r1c3")?;
-        game.apply_move_str("move b5 from r1c2 to r2c1")?;
-        game.apply_move_str("move r4 from r1c3 to r2c2")?;
+        apply_moves!(
+            game,
+            place!(r, 2 => 2, 3),
+            place!(b, 3 => 2, 1),
+            place!(r, 6 => 2, 4),
+            place!(b, 5 => 1, 2),
+            place!(r, 4 => 1, 3),
+            mov!(b, 5 => 1, 2 => 2, 1),
+            mov!(r, 4 => 1, 3 => 2, 2)
+        );
         assert_eq!(game.result, GameResult::FirstPlayerWon);
 
         Ok(())
@@ -1050,23 +1153,26 @@ mod test {
         let deck = Deck::ordered("jggjgjj")?;
         let mut game = Game::new(Layout::Bricks7, deck, Rules::new(false, false));
 
-        game.apply_move_str("place r2 at r2c3")?;
-        game.apply_move_str("place b1 at r1c2")?;
-        game.apply_move_str("move r2 from r2c3 to r1c2")?;
-        game.apply_move_str("place b1 at r1c1")?;
-        game.apply_move_str("place r2 at r2c3")?;
-        game.apply_move_str("place b1 at r1c3")?;
-        game.apply_move_str("place r2 at r2c2")?;
-        game.apply_move_str("move b1 from r1c3 to r2c3")?;
-        game.apply_move_str("move r2 from r2c2 to r1c1")?;
-        game.apply_move_str("place b1 at r1c3")?;
-        game.apply_move_str("place r2 at r2c2")?;
-        game.apply_move_str("move b1 from r1c3 to r2c1")?;
-        game.apply_move_str("move r2 from r2c2 to r2c1")?;
-        game.apply_move_str("place b1 at r2c2")?;
-        game.apply_move_str("move r2 from r1c1 to r2c2")?;
-        game.apply_move_str("move b1 from r1c1 to r1c3")?;
-        game.apply_move_str("move r2 from r2c1 to r1c3")?;
+        apply_moves!(
+            game,
+            place!(r, 2 => 2, 3),
+            place!(b, 1 => 1, 2),
+            mov!(r, 2 => 2, 3 => 1, 2),
+            place!(b, 1 => 1, 1),
+            place!(r, 2 => 2, 3),
+            place!(b, 1 => 1, 3),
+            place!(r, 2 => 2, 2),
+            mov!(b, 1 => 1, 3 => 2, 3),
+            mov!(r, 2 => 2, 2 => 1, 1),
+            place!(b, 1 => 1, 3),
+            place!(r, 2 => 2, 2),
+            mov!(b, 1 => 1, 3 => 2, 1),
+            mov!(r, 2 => 2, 2 => 2, 1),
+            place!(b, 1 => 2, 2),
+            mov!(r, 2 => 1, 1 => 2, 2),
+            mov!(b, 1 => 1, 1 => 1, 3),
+            mov!(r, 2 => 2, 1 => 1, 3)
+        );
 
         assert_eq!(game.generate_moves().len(), 0);
         assert_eq!(game.result, GameResult::FirstPlayerWon);

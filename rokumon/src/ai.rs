@@ -196,6 +196,7 @@ mod test {
 
     use crate::board::Layout;
     use crate::card::Deck;
+    use crate::coord::UserCoord;
     use crate::game::Rules;
     use failure::Fallible;
 
@@ -203,9 +204,9 @@ mod test {
     fn test_eval() -> Fallible<()> {
         let mut game = Game::new(Layout::Bricks7, Deck::ordered("JJJGGGG")?, Rules::default());
         assert_eq!(evaluate_for_first_player(&game), 0);
-        game.apply_move_str("place r2 at r1c2")?;
+        game.apply_user_move(&GameMove::Place(Die::new(DiceColor::Red, 2), UserCoord::new(1, 2)))?;
         assert_eq!(evaluate_for_first_player(&game), 1);
-        game.apply_move_str("place b3 at r2c2")?;
+        game.apply_user_move(&GameMove::Place(Die::new(DiceColor::Black, 3), UserCoord::new(2, 2)))?;
         assert_eq!(evaluate_for_first_player(&game), -1);
 
         Ok(())

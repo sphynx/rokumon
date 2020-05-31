@@ -8,9 +8,9 @@ use rand::seq::SliceRandom;
 /// Possible colors of dice.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Debug, Hash)]
 pub enum DiceColor {
-    Red,
-    Black,
-    White,
+    Red = 0,
+    Black = 1,
+    White = 2,
 }
 
 /// A die in the game. Has a color and value. It's a normal cube die,
@@ -158,7 +158,7 @@ impl Deck {
         descr.parse()
     }
 
-    /// Shuffled deck defined by a specification like 'JJGGGG'.
+    /// Shuffled deck defined by a specification like 'JJJGGGG'.
     #[allow(unused)]
     pub fn shuffled(descr: &str) -> Fallible<Self> {
         let mut deck: Deck = descr.parse()?;

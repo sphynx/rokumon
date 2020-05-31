@@ -1,7 +1,7 @@
 use rayon::prelude::*;
 
-use crate::coord::Coord;
-use crate::game::{Game, GameMove};
+use rokumon::coord::Coord;
+use rokumon::game::{Game, GameMove};
 
 /// This perft uses a clone of the game every time it explores a new
 /// move. Hence it makes a lot of allocations and uses a lot of
@@ -46,9 +46,9 @@ pub fn perft(game: &mut Game, depth: usize) -> usize {
 mod test {
     use super::*;
 
-    use crate::board::Layout;
-    use crate::card::Deck;
-    use crate::game::{Game, Rules};
+    use rokumon::board::Layout;
+    use rokumon::card::Deck;
+    use rokumon::game::{Game, Rules};
 
     #[test]
     pub fn test_perft() -> failure::Fallible<()> {

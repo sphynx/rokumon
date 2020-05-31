@@ -3,7 +3,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rokumon::board::Layout;
 use rokumon::card::Deck;
 use rokumon::game::{Game, Rules};
-use rokumon::perft::perft;
+use rokumon_console_ui::perft::perft;
 
 pub fn start_pos(c: &mut Criterion) {
     let deck = Deck::ordered("jggjgjj").unwrap();

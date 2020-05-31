@@ -1,21 +1,15 @@
-mod ai;
-mod board;
-mod card;
 mod console_ui;
-mod coord;
-mod game;
 mod parsers;
 mod perft;
-mod play;
 
-use ai::AlphaBetaAI;
-use board::Layout;
-use card::Deck;
 use console_ui::Human;
 use failure::{bail, Fallible};
-use game::{Game, Rules};
 use perft::*;
-use play::RandomAI;
+use rokumon::ai::AlphaBetaAI;
+use rokumon::board::Layout;
+use rokumon::card::Deck;
+use rokumon::game::{Game, Rules};
+use rokumon::play::{self, RandomAI};
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 use std::time::Instant;

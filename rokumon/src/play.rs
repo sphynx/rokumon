@@ -73,5 +73,4 @@ pub fn play_game(mut game: Game, mut player1: impl Strategy, mut player2: impl S
     } else {
         -1
     }
-
 }

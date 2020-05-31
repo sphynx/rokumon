@@ -1,8 +1,8 @@
-use crate::ai::AlphaBetaAI;
-use crate::coord::Coord;
-use crate::game::{Game, GameMove};
 use crate::parsers;
-use crate::play::Strategy;
+use rokumon::ai::AlphaBetaAI;
+use rokumon::coord::Coord;
+use rokumon::game::{Game, GameMove};
+use rokumon::play::Strategy;
 
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
