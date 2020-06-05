@@ -1,20 +1,24 @@
 use failure::{bail, Fallible};
+use rand::seq::SliceRandom;
 use std::convert::TryFrom;
 use std::fmt;
 use std::str::FromStr;
 
-use rand::seq::SliceRandom;
+#[cfg(feature = "with_serde")]
+use serde::{Deserialize, Serialize};
 
 /// Possible colors of dice.
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Debug, Hash)]
 pub enum DiceColor {
-    Red = 0,
-    Black = 1,
-    White = 2,
+    Red,
+    Black,
+    White,
 }
 
 /// A die in the game. Has a color and value. It's a normal cube die,
 /// so values are from 1 to 6.
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Hash)]
 pub struct Die {
     pub color: DiceColor,
@@ -57,6 +61,7 @@ impl fmt::Display for Die {
 }
 
 /// Possible card kinds. There are three of them so far.
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone, Debug)]
 pub enum CardKind {
     Jade,
@@ -78,6 +83,7 @@ impl TryFrom<char> for CardKind {
 }
 
 /// A card in the game. It is of certain kind and may have dice on it.
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
 pub struct Card {
     pub kind: CardKind,
@@ -126,6 +132,8 @@ impl TryFrom<char> for Card {
     }
 }
 
+/// Deck is a collection of cards.
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Debug, Clone)]
 pub struct Deck {
     cards: Vec<Card>,

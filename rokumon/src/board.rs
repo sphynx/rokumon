@@ -9,15 +9,20 @@ use crate::card::{Card, Deck, Die};
 use crate::coord::{Coord, UserCoord};
 use crate::game::GameMove;
 
+#[cfg(feature = "with_serde")]
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
 /// A type of grid to used for the game. Most of the game scenarios
 /// use hex grid (also known as "bricks layout"), but the basic one
 /// uses square grid.
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum Grid {
     Hex,
     Square,
 }
 
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Layout {
     /// 3 x 2 layout using square grid. Act 1 in The Rules.
@@ -44,13 +49,38 @@ impl FromStr for Layout {
     }
 }
 
+type Cards = BTreeMap<Coord, Card>;
+
 /// Represents the whole game board: cards at particular positions and
 /// a type of grid used (to make sense of positions).
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Board {
     pub grid: Grid,
-    pub cards: BTreeMap<Coord, Card>,
+    #[cfg_attr(feature = "with_serde", serde(with = "serde_cards"))]
+    pub cards: Cards,
     adj_triples: Vec<(Coord, Coord, Coord)>,
+}
+
+#[cfg(feature = "with_serde")]
+mod serde_cards {
+    use super::*;
+
+    pub fn serialize<S>(cards: &Cards, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        s.collect_seq(cards)
+    }
+
+    pub fn deserialize<'de, D>(d: D) -> Result<Cards, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let vec = <Vec<(Coord, Card)>>::deserialize(d)?;
+        let map = vec.into_iter().collect();
+        Ok(map)
+    }
 }
 
 impl Board {

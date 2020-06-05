@@ -2,16 +2,18 @@ use rand::seq::SliceRandom;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::fmt;
-// use std::str::FromStr;
 
 use failure::{bail, ensure, format_err, Fallible};
 
 use crate::board::{Board, Layout};
 use crate::card::{Card, Deck, DiceColor, Die};
 use crate::coord::{Coord, UserCoord};
-// use crate::parsers;
+
+#[cfg(feature = "with_serde")]
+use serde::{Deserialize, Serialize};
 
 /// A player. Has a name and a stock of dice.
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Player {
     name: String,
@@ -79,6 +81,7 @@ impl fmt::Display for Player {
 
 /// Representation of a possible game move. Parametrised by a type of
 /// coordinates used (user coordinates or internal ones).
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Hash)]
 pub enum GameMove<C> {
     Place(Die, C),
@@ -115,6 +118,7 @@ pub struct FightResult {
 
 /// Current game result, can be either won by one of the player or
 /// still in progress.
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum GameResult {
     InProgress,
@@ -125,6 +129,7 @@ pub enum GameResult {
 /// Variations in game rules. Currently, it's whether we allow certain
 /// moves or not.
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 pub struct Rules {
     enable_fight_move: bool,
     enable_surprise_move: bool,
@@ -151,6 +156,7 @@ impl Rules {
 /// Represents the whole game state with board, players and additional
 /// state variables (whose move it is, number of used "surprises" and
 /// the game result).
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Game {
     pub board: Board,
@@ -786,7 +792,7 @@ impl Game {
     }
 }
 
-#[derive(PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[derive(PartialOrd, Ord, PartialEq, Eq, Hash, Debug)]
 pub struct GameFeatures {
     cards: BTreeMap<Coord, Card>,
     player1_dice: Vec<Die>,
@@ -1158,6 +1164,20 @@ mod test {
 
         assert_eq!(game.generate_moves().len(), 0);
         assert_eq!(game.result, GameResult::FirstPlayerWon);
+
+        Ok(())
+    }
+
+    #[cfg(feature = "with_serde")]
+    #[test]
+    fn game_serde() -> Fallible<()> {
+        let deck = Deck::ordered("jggjgjj")?;
+        let game = Game::new(Layout::Bricks7, deck, Rules::new(false, false));
+        let ser = serde_json::to_string(&game)?;
+        eprintln!("serialised = {}", ser);
+        let de: Game = serde_json::from_str(&ser)?;
+        eprintln!("deserialised = {:?}", de);
+        assert_eq!(game.defining_features(), de.defining_features());
 
         Ok(())
     }

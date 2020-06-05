@@ -2,18 +2,21 @@ mod console_ui;
 mod parsers;
 mod perft;
 
-use console_ui::Human;
+use std::fmt::{self, Display, Formatter};
+use std::str::FromStr;
+use std::time::Instant;
+
 use failure::{bail, Fallible};
-use perft::*;
+use structopt::StructOpt;
+
 use rokumon::ai::AlphaBetaAI;
 use rokumon::board::Layout;
 use rokumon::card::Deck;
 use rokumon::game::{Game, Rules};
 use rokumon::play::{self, RandomAI};
-use std::fmt::{self, Display, Formatter};
-use std::str::FromStr;
-use std::time::Instant;
-use structopt::StructOpt;
+
+use console_ui::Human;
+use perft::{parallel_perft, perft};
 
 #[derive(Debug)]
 enum Mode {

@@ -674,6 +674,8 @@ dependencies = [
  "itertools",
  "rand",
  "rubot",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -682,9 +684,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "failure",
- "itertools",
  "nom",
- "rand",
  "rayon",
  "rokumon",
  "rustyline",
@@ -795,6 +795,9 @@ name = "serde"
 version = "1.0.111"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c9124df5b40cbd380080b2cc6ab894c040a3070d995f5c9dc77e18c34a8ae37d"
+dependencies = [
+ "serde_derive",
+]
 
 [[package]]
 name = "serde_derive"

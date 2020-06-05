@@ -2,6 +2,9 @@ use failure::bail;
 use std::fmt;
 use std::str::FromStr;
 
+#[cfg(feature = "with_serde")]
+use serde::{Deserialize, Serialize};
+
 /// Coordinates used for both hex and square grids.
 ///
 /// For square coordinates z is always zero.
@@ -17,6 +20,7 @@ use std::str::FromStr;
 /// More details about "cube coordinates" and tons of useful
 /// hex-related information can be found here:
 /// https://www.redblobgames.com/grids/hexagons/#coordinates-cube
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Copy, Clone)]
 pub struct Coord {
     pub x: i8,
@@ -47,6 +51,7 @@ impl Coord {
 /// More user-friendly coordinates easier to undertand and type. Row
 /// is counted from 1 and start from the top. Card is counted from 1
 /// and starts from the left.
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
 pub struct UserCoord {
     pub row: u8,

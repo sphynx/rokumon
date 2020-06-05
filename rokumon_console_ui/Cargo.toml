@@ -6,8 +6,6 @@ edition = "2018"
 
 [dependencies]
 rokumon = { path = "../rokumon" }
-rand = "0.7"
-itertools = "0.9"
 failure = "0.1"
 nom = "5"
 structopt = "0.3"

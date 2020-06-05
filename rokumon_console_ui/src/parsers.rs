@@ -8,13 +8,9 @@
 /// - fight at R2C3
 /// - surprise from R1C2 to <3, -2, -1>
 /// - submit
-use rokumon::card::{DiceColor, Die};
-use rokumon::coord::{Coord, UserCoord};
-use rokumon::game::GameMove;
+use std::convert::TryFrom;
 
 use failure::{bail, Fallible};
-
-use std::convert::TryFrom;
 
 use nom::branch::alt;
 use nom::bytes::complete::tag_no_case;
@@ -23,6 +19,10 @@ use nom::combinator::{all_consuming, map, map_opt, map_res, value};
 use nom::sequence::{delimited, pair, terminated, tuple};
 use nom::IResult;
 use nom::{do_parse, tag_no_case};
+
+use rokumon::card::{DiceColor, Die};
+use rokumon::coord::{Coord, UserCoord};
+use rokumon::game::GameMove;
 
 fn unsigned(i: &str) -> IResult<&str, i8> {
     map_res(digit1, |s: &str| s.parse())(i)
