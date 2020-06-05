@@ -7,7 +7,7 @@ wasm:
     wasm-objdump rokumon_wasm/pkg/*.wasm -x -j export
 
 serve: wasm
-    cd www && npm install && npm run serve
+    cd www && npm install && npm start
 
 test:
     cargo test

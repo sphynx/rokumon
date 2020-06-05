@@ -4,6 +4,3 @@ rokumon_console_ui/target
 *.svg
 history.txt
 www/node_modules
-
-# perhaps we will need to commit it when we fix that problem with chodekar package
-www/package-lock.json

@@ -19,3 +19,10 @@ pub fn init_game(mode: u32) -> String {
         game.to_string()
     }
 }
+
+#[wasm_bindgen]
+pub fn start_position() -> JsValue {
+    let deck = Deck::seven_shuffled();
+    let game = Game::new(Layout::Bricks7, deck, Rules::new(false, false));
+    JsValue::from_serde(&game).unwrap()
+}
