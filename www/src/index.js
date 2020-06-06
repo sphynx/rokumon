@@ -4,13 +4,20 @@ import './index.css';
 import _ from 'lodash';
 
 function Card(props) {
-  const kind = props.kind;
-  const kindClass = kind === 'j' ? 'jade' : (kind === 'g' ? 'gold' : 'card');
+  const kindClass = props.kind.toLowerCase();
   const selectedClass = props.selected ? 'selected-card' : '';
+  const { x, y } = coord_to_position(props.grid, props.coord);
+  const styles = {
+    left: x,
+    top: y,
+  };
+
   return (
     <div
+      style={styles}
       className={`card ${kindClass} ${selectedClass}`}
       onClick={props.onClick}>
+
       <span className="card-ix">{props.ix}</span>
 
       {props.dice.map(d =>
@@ -26,7 +33,7 @@ function Die(props) {
   const selected_clz = props.selected ? 'selected-die' : '';
   return (
     <span
-      className={`die ${props.color + '-die'} ${selected_clz}`}
+      className={`die ${props.color.toLowerCase() + '-die'} ${selected_clz}`}
       onClick={props.onClick}>
       {die_char}
     </span>
@@ -36,7 +43,7 @@ function Die(props) {
 function DieOnCard(props) {
   const die_char = "⚀⚁⚂⚃⚄⚅"[props.value - 1];
   return (
-    <span className={`die-on-card ${props.color + '-die-on-card'}`}>
+    <span className={`die-on-card ${props.color.toLowerCase() + '-die-on-card'}`}>
       {die_char}
     </span>
   );
@@ -59,31 +66,21 @@ function DiceStock(props) {
 }
 
 class Board extends React.Component {
-  renderCard(ix) {
-    const card = this.props.deck[ix];
-    return (<Card
-      ix={ix}
-      kind={card.kind}
-      dice={card.dice}
-      selected={ix === this.props.selectedCard}
-      onClick={() => this.props.onClick(ix)}
-    />);
-  }
-
   render() {
     return (
-      <div>
-        <div className="top-row">
-          {this.renderCard(0)}
-          {this.renderCard(1)}
-          {this.renderCard(2)}
-        </div>
-        <div className="bottom-row">
-          {this.renderCard(3)}
-          {this.renderCard(4)}
-          {this.renderCard(5)}
-          {this.renderCard(6)}
-        </div>
+      <div className="card-board">
+        {this.props.cards.map((card, ix) =>
+          <Card
+            key={ix}
+            ix={ix}
+            coord={card[0]}
+            grid={this.props.grid}
+            kind={card[1].kind}
+            dice={card[1].dice}
+            selected={ix === this.props.selectedCard}
+            onClick={() => this.props.onClick(ix)}
+          />
+        )}
       </div>
     );
   }
@@ -121,56 +118,27 @@ class Game extends React.Component {
   constructor(props) {
     super(props);
 
-    const deck_spec = "jjjgggg";
-    let deck = [];
-    for (const c of deck_spec) {
-      deck.push({ kind: c, dice: [] });
-    }
-    shuffle(deck);
+    const game = props.game_data;
+    const board = game.board;
+    const player1 = game.player1;
+    const player2 = game.player2;
+    const player1_moves = game.player1_moves;
+    const history = game.history;
 
     this.state = {
       board: {
-        layout: 'Brick7',
-        deck: deck
+        grid: board.grid,
+        cards: board.cards
       },
+      player1_moves,
+      player1,
+      player2,
+      history,
+
       selected_card: null,
       selected_die: null,
-      player1_moves: true,
-      player1: {
-        name: 'Player1',
-        dice: [
-          { color: 'red', value: 2 },
-          { color: 'red', value: 2 },
-          { color: 'red', value: 4 },
-          { color: 'red', value: 6 },
-        ]
-      },
-      player2: {
-        name: 'Player2',
-        dice: [
-          { color: 'black', value: 1 },
-          { color: 'black', value: 1 },
-          { color: 'black', value: 3 },
-          { color: 'black', value: 5 },
-          { color: 'white', value: 1 },
-        ],
-      },
-      history: [],
     }
   }
-
-  componentDidMount() {
-    this.loadWasm();
-  }
-
-  loadWasm = async () => {
-    try {
-      const wasm = await import('rokumon_wasm');
-      this.setState({ wasm });
-    } catch (err) {
-      console.error(`Unexpected error in loadWasm. [Message: ${err.message}]`);
-    }
-  };
 
   handleDieClick(die) {
     this.setState({ selected_die: die, selected_card: null });
@@ -230,7 +198,7 @@ class Game extends React.Component {
         // Put the die on the card.
         const board = this.state.board;
         let new_board = _.cloneDeep(board);
-        new_board.deck[card_ix].dice.push(move.what);
+        new_board.cards[card_ix][1].dice.push(move.what);
         this.setState({ board: new_board, player1_moves: !this.state.player1_moves });
 
         break;
@@ -242,23 +210,21 @@ class Game extends React.Component {
   }
 
   render() {
-    const { wasm = {} } = this.state;
     const who_moves = this.state.player1_moves ? this.state.player1.name : this.state.player2.name;
     const sel_card_ix = this.state.selected_card;
     const selected_card_info = sel_card_ix
-      ? this.state.board.deck[sel_card_ix].kind
+      ? this.state.board.cards[sel_card_ix][1].kind
       : 'None';
     return (
       <div className="game">
-        <div>{wasm.init_game && wasm.init_game(0)}</div>
         <DiceStock
           dice={this.state.player2.dice}
           selectedDie={this.state.selected_die}
           onClick={(die) => this.handleDieClick(die)}
         />
         <Board
-          deck={this.state.board.deck}
-          layout={this.state.board.layout}
+          cards={this.state.board.cards}
+          grid={this.state.board.grid}
           selectedCard={this.state.selected_card}
           onClick={(card) => this.handleCardClick(card)}
         />
@@ -278,22 +244,48 @@ class Game extends React.Component {
   }
 }
 
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { wasm: {}, wasm_loaded: false, game: {} };
+  }
+
+  render() {
+    return this.state.wasm_loaded
+      ? <Game game_data={this.state.game} />
+      : <span>Loading wasm...</span>;
+
+  }
+
+  componentDidMount() {
+    this.loadWasm();
+  }
+
+  loadWasm = async () => {
+    console.log("loadWasm");
+    try {
+      const wasm = await import('rokumon_wasm');
+
+      // TODO: get those from UI
+      const opts = wasm.Opts.new(false, true);
+      const game = wasm.init_game(opts);
+
+      this.setState({ wasm, wasm_loaded: true, game });
+    } catch (err) {
+      console.error(`Unexpected error in loadWasm. Message: ${err.message}`);
+    }
+  };
+}
+
+
 // ========================================
 
 ReactDOM.render(
-  <Game />,
+  <App />,
   document.getElementById('root')
 );
 
-
-function shuffle(array) {
-  for (var i = array.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1));
-    var temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-}
+// Utils.
 
 function ppMove(move) {
   switch (move.kind) {
@@ -308,4 +300,32 @@ function ppMove(move) {
 
 function ppDie(die) {
   return die.color + die.value;
+}
+
+function coord_to_position(grid, coord) {
+  if (grid === "Hex") {
+    const scale_x = 45;
+    const scale_y = 70;
+    const shift_x = 20;
+    const shift_y = 100;
+
+    const q = coord.x;
+    const r = coord.y;
+    const sqt = Math.sqrt(3);
+
+    return {
+      x: shift_x + Math.round(scale_x * (sqt * q + sqt / 2 * r)),
+      y: shift_y + Math.round(scale_y * (3 / 2 * r))
+    }
+  } else {
+    const scale_x = 80;
+    const scale_y = 100;
+    const shift_x = 15;
+    const shift_y = 100;
+
+    return {
+      x: shift_x + scale_x * coord.x,
+      y: shift_y + scale_y * coord.y
+    }
+  }
 }
