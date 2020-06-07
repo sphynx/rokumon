@@ -69,17 +69,19 @@ class Board extends React.Component {
   render() {
     return (
       <div className="card-board">
-        {this.props.cards.map((card, ix) =>
-          <Card
-            key={ix}
+        {this.props.cards.map((coord_card, ix) => {
+          const [coord, card] = coord_card;
+          return (<Card
+            key={coord}
             ix={ix}
-            coord={card[0]}
+            coord={coord}
             grid={this.props.grid}
-            kind={card[1].kind}
-            dice={card[1].dice}
-            selected={ix === this.props.selectedCard}
-            onClick={() => this.props.onClick(ix)}
-          />
+            kind={card.kind}
+            dice={card.dice}
+            selected={coord === this.props.selectedCard}
+            onClick={() => this.props.onClick(coord)}
+          />);
+        }
         )}
       </div>
     );
@@ -140,66 +142,60 @@ class Game extends React.Component {
     }
   }
 
+  getCardAtCoord(board, target_coord) {
+    const target = JSON.stringify(target_coord);
+    const coord_card = board.cards.find((coord_card) => JSON.stringify(coord_card[0]) === target);
+    return coord_card ? coord_card[1] : undefined;
+  }
+
   handleDieClick(die) {
     this.setState({ selected_die: die, selected_card: null });
   }
 
-  handleCardClick(card_ix) {
-    if (this.state.selected_card === card_ix) {
+  handleCardClick(coord) {
+    if (this.state.selected_card === coord) {
       // Deselect previously selected card.
       this.setState({ selected_card: null });
     } else if (this.state.selected_die !== null) {
       // Place selected die on this card.
-      const move = { kind: 'place', what: this.state.selected_die, where: card_ix };
+      const move = { kind: 'place', what: this.state.selected_die, where: coord };
       const history = this.state.history.concat([move]);
       this.applyMove(move);
       this.setState({ selected_die: null, history: history });
     } else if (this.state.selected_card !== null) {
       // Move a die from previously selected card to this one.
-      const move = { kind: 'move', from: this.state.selected_card, to: card_ix };
+      const move = { kind: 'move', from: this.state.selected_card, to: coord };
       const history = this.state.history.concat([move]);
       this.applyMove(move);
       this.setState({ selected_die: null, selected_card: null, history: history });
     } else {
       // Select first card.
-      this.setState({ selected_die: null, selected_card: card_ix });
+      this.setState({ selected_die: null, selected_card: coord });
     }
   }
 
   applyMove(move) {
     switch (move.kind) {
       case 'place':
-        const card_ix = move.where;
-
-        function copy_dice(dice, leave_out) {
-          // copy dice to new_dice, leaving out the moved die
-          let new_dice = [];
-          let found = false;
-          for (const d of dice) {
-            if (d === leave_out && !found) {
-              found = true;
-            } else {
-              new_dice.push({ ...d });
-            }
-          }
-          return new_dice;
-        }
-
+        // Delete die from this player's supply.
         if (this.state.player1_moves) {
-          const dice = this.state.player1.dice;
-          const new_dice = copy_dice(dice, move.what);
-          this.setState({ player1: { name: this.state.player1.name, dice: new_dice } });
+          let player1_copy = _.cloneDeep(this.state.player1);
+          player1_copy.dice.splice(player1_copy.dice.findIndex(d => d === move.what), 1);
+          this.setState({ player1: player1_copy });
         } else {
-          const dice = this.state.player2.dice;
-          const new_dice = copy_dice(dice, move.what);
-          this.setState({ player2: { name: this.state.player2.name, dice: new_dice } });
+          let player2_copy = _.cloneDeep(this.state.player2);
+          player2_copy.dice.splice(player2_copy.dice.findIndex(d => d === move.what), 1);
+          this.setState({ player2: player2_copy });
         }
 
         // Put the die on the card.
-        const board = this.state.board;
-        let new_board = _.cloneDeep(board);
-        new_board.cards[card_ix][1].dice.push(move.what);
-        this.setState({ board: new_board, player1_moves: !this.state.player1_moves });
+        let board_copy = _.cloneDeep(this.state.board);
+        let card = this.getCardAtCoord(board_copy, move.where);
+        card.dice.push(move.what);
+        this.setState({
+          board: board_copy,
+          player1_moves: !this.state.player1_moves
+        });
 
         break;
 
@@ -209,14 +205,33 @@ class Game extends React.Component {
     }
   }
 
+  getMoveFromBot() {
+    const move = this.props.playground.get_move();
+    this.setState({ ai_says: move })
+  }
+
+  applyBotAdvice() {
+    const move = this.state.ai_says;
+    for (const kind in move) {
+      if (kind === "Place") {
+        const [what, where] = move[kind];
+        // what is a coordinate
+        // where is a die
+      }
+    }
+  }
+
   render() {
     const who_moves = this.state.player1_moves ? this.state.player1.name : this.state.player2.name;
-    const sel_card_ix = this.state.selected_card;
-    const selected_card_info = sel_card_ix
-      ? this.state.board.cards[sel_card_ix][1].kind
-      : 'None';
+    const sel_card_coord = this.state.selected_card;
+    const card = this.getCardAtCoord(this.state.board, sel_card_coord);
+    const selected_card_info = card ? card.kind : 'None';
+
     return (
       <div className="game">
+        <button onClick={() => this.getMoveFromBot()}>Get move</button>
+        <div>AI says: {JSON.stringify(this.state.ai_says)}</div>
+        <button onClick={() => this.applyBotAdvice()}>Apply bot advice</button>
         <DiceStock
           dice={this.state.player2.dice}
           selectedDie={this.state.selected_die}
@@ -226,7 +241,7 @@ class Game extends React.Component {
           cards={this.state.board.cards}
           grid={this.state.board.grid}
           selectedCard={this.state.selected_card}
-          onClick={(card) => this.handleCardClick(card)}
+          onClick={(coord) => this.handleCardClick(coord)}
         />
         <DiceStock
           dice={this.state.player1.dice}
@@ -247,14 +262,13 @@ class Game extends React.Component {
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { wasm: {}, wasm_loaded: false, game: {} };
+    this.state = { wasm: {}, wasm_loaded: false, game: {}, playground: {} };
   }
 
   render() {
     return this.state.wasm_loaded
-      ? <Game game_data={this.state.game} />
+      ? <Game game_data={this.state.game} playground={this.state.playground} />
       : <span>Loading wasm...</span>;
-
   }
 
   componentDidMount() {
@@ -268,9 +282,10 @@ class App extends React.Component {
 
       // TODO: get those from UI
       const opts = wasm.Opts.new(false, true);
-      const game = wasm.init_game(opts);
+      let playground = wasm.Playground.new(opts);
+      const game = playground.get_game();
+      this.setState({ wasm, wasm_loaded: true, game, playground });
 
-      this.setState({ wasm, wasm_loaded: true, game });
     } catch (err) {
       console.error(`Unexpected error in loadWasm. Message: ${err.message}`);
     }
@@ -290,9 +305,9 @@ ReactDOM.render(
 function ppMove(move) {
   switch (move.kind) {
     case 'place':
-      return 'place ' + ppDie(move.what) + ' at card ' + move.where;
+      return 'place ' + ppDie(move.what) + ' at card ' + JSON.stringify(move.where);
     case 'move':
-      return 'move from card ' + move.from + ' to card ' + move.to;
+      return 'move from card ' + JSON.stringify(move.from) + ' to card ' + JSON.stringify(move.to);
     default:
       return 'unknown move';
   }
@@ -329,3 +344,4 @@ function coord_to_position(grid, coord) {
     }
   }
 }
+

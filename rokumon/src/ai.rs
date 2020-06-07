@@ -149,18 +149,18 @@ impl Strategy for AlphaBetaAI {
         }
 
         match game.ply_to_be_played() {
-            0 => {
-                // We are just starting, let's play a random `place`
-                // in better squares.
-                let coord = game
-                    .board
-                    .coords_iter()
-                    .map(|coord| (*coord, game.board.num_of_adjacent_triples(*coord)))
-                    .max_by_key(|(_coord, n)| *n)
-                    .unwrap();
+            // 0 => {
+            //     // We are just starting, let's play a random `place`
+            //     // in better squares.
+            //     let coord = game
+            //         .board
+            //         .coords_iter()
+            //         .map(|coord| (*coord, game.board.num_of_adjacent_triples(*coord)))
+            //         .max_by_key(|(_coord, n)| *n)
+            //         .unwrap();
 
-                return GameMove::Place(Die::new(DiceColor::Red, 2), coord.0);
-            }
+            //     return GameMove::Place(Die::new(DiceColor::Red, 2), coord.0);
+            // }
             _ => {
                 // Now just run alpha-beta.
                 if self.duration != 0 {
