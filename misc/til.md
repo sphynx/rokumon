@@ -17,7 +17,7 @@ This is not supported in wasm-bindgen (you can only serialize C-style enums), so
 
 Solutions:
 
-1. use serde and serialise everything to JSON, which can be easily passed to/from JS and read there. 
+1. use serde and serialise everything to JSON, which can be easily passed to/from JS and read there.
 2. redesign a new system of data types which are WASM friendly and convert from your normal datatypes (this looks laborious, but will probably make more sense if performance matters).
 
 ## Using pointers to structures
@@ -80,7 +80,8 @@ large.do_something_with_me();
 ## `time` failed in run time
 
 When I used bot's `with_duration`.
-Still have to resolve that.
+
+I resolved it with using `Performance` from `web_sys` to measure elapsed time, instead of `std::time::Instant`. The idea here is that in WASM we are not allowed underlying OS calls like, say, access to the timer, since WASM can't make assumptions about the host it's running on. So, we have to encode those assumptions ourselves and say, use, `web_sys` package to provide the missing OS functionality.
 
 ## Reconcile React with WebAseembly
 
@@ -143,4 +144,50 @@ mod serde_cards {
 }
 ```
 
+## Using conditionally compiled modules with cfg_if! macro
 
+When I tried to customize my core library for using both with and without WASM, I had come up with a conditionally compiled module which I wanted to conditionally use, i.e. something like this:
+
+```rust
+#[cfg(feature = "for_wasm")]
+pub mod web_duration {
+    pub fn mk_duration { ... };
+}
+
+pub fn something() {
+    if cfg!(feature = "for_wasm") {
+        web_duration::mk_duration(...);
+    } else {
+        mk_duration(...);
+    }
+}
+```
+
+However, it failed with `unresolved module web_duration` when run without "for_wasm" feature. Apparently, `cfg!` macro just returns `true` or `false` in compile time, so effectively the compile code is equivalent to:
+
+```rust
+if false {
+    web_duration::mk_duration(...)
+} else {
+    mk_duration(...)
+};
+```
+
+However, this means that both side of the condition still have to be valid and compile fine. And `web_duration` is excluded from compilation by using `#[cfg(...)]`, so it doesn't work.
+
+One solution to this is to use a crate `cfg_if` (which is quite popular!).
+With that crate we can have something like this instead:
+
+```rust
+use cfg_if::cfg_if;
+
+cfg_if! {
+    if #[cfg(feature = "for_wasm")] {
+        web_duration::mk_duration(...)
+    } else {
+        mk_duration(...)
+    };
+};
+```
+
+and it will work. `cfg_if` is just a clever declarative macro defined with `macro_rules!`. It collects all the statements and annotates them with explicit `#[cfg]` instead of just `cfg!`.
