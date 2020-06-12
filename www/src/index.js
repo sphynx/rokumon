@@ -142,9 +142,30 @@ class Game extends React.Component {
     }
   }
 
+  updateAllGame(game) {
+    const board = game.board;
+    const player1 = game.player1;
+    const player2 = game.player2;
+    const player1_moves = game.player1_moves;
+    const history = game.history;
+
+    this.setState({
+      board: {
+        grid: board.grid,
+        cards: board.cards
+      },
+      player1_moves,
+      player1,
+      player2,
+      history,
+
+      selected_card: null,
+      selected_die: null,
+    });
+  }
+
   getCardAtCoord(board, target_coord) {
-    const target = JSON.stringify(target_coord);
-    const coord_card = board.cards.find((coord_card) => JSON.stringify(coord_card[0]) === target);
+    const coord_card = board.cards.find((coord_card) => _.isEqual(coord_card[0], target_coord));
     return coord_card ? coord_card[1] : undefined;
   }
 
@@ -163,18 +184,18 @@ class Game extends React.Component {
     } else if (this.state.selected_die !== null) {
       // Place selected die on this card.
       const move = { 'Place': [this.state.selected_die, coord] };
-      const history = this.state.history.concat([move]);
       this.applyMove(move);
-      this.setState({ selected_die: null, history: history });
+      this.sendMoveToBot(move);
+      this.setState({ selected_die: null });
     } else if (this.state.selected_card !== null) {
       // Move a die from previously selected card to this one.
       const card = this.getCardAtCoord(this.state.board, this.state.selected_card);
       if (card.dice.length > 0) {
         let die = _.last(card.dice);
         const move = { 'Move': [die, this.state.selected_card, coord] };
-        const history = this.state.history.concat([move]);
         this.applyMove(move);
-        this.setState({ selected_die: null, selected_card: null, history: history });
+        this.sendMoveToBot(move);
+        this.setState({ selected_die: null, selected_card: null });
       }
     } else {
       // Select first card.
@@ -183,7 +204,9 @@ class Game extends React.Component {
   }
 
   applyMove(move) {
+    const history = this.state.history.concat([move]);
     for (var kind in move) {
+
       switch (kind) {
         case 'Place': {
           const what = move[kind][0];
@@ -204,9 +227,11 @@ class Game extends React.Component {
           let board_copy = _.cloneDeep(this.state.board);
           let card = this.getCardAtCoord(board_copy, where);
           card.dice.push(what);
+
           this.setState({
             board: board_copy,
-            player1_moves: !this.state.player1_moves
+            player1_moves: !this.state.player1_moves,
+            history,
           });
 
           break;
@@ -229,7 +254,8 @@ class Game extends React.Component {
 
           this.setState({
             board: board_copy,
-            player1_moves: !this.state.player1_moves
+            player1_moves: !this.state.player1_moves,
+            history
           });
 
           break;
@@ -244,11 +270,22 @@ class Game extends React.Component {
 
   getMoveFromBot() {
     const move = this.props.playground.get_move();
+    this.applyMove(move);
+    this.props.playground.send_move(move);
     this.setState({ ai_says: move })
   }
 
-  applyBotAdvice() {
-    this.applyMove(this.state.ai_says);
+  sendLastMove() {
+    const move = _.last(this.state.history);
+    this.props.playground.send_move(move);
+    const game_data = this.props.playground.get_game();
+    this.updateAllGame(game_data);
+  }
+
+  sendMoveToBot(move) {
+    this.props.playground.send_move(move);
+    const game_data = this.props.playground.get_game();
+    this.updateAllGame(game_data);
   }
 
   render() {
@@ -259,9 +296,8 @@ class Game extends React.Component {
 
     return (
       <div className="game">
-        <button onClick={() => this.getMoveFromBot()}>Get move</button>
-        <div>AI says: {JSON.stringify(this.state.ai_says)}</div>
-        <button onClick={() => this.applyBotAdvice()}>Apply bot advice</button>
+        <button onClick={() => this.getMoveFromBot()}>Get bot's move</button>
+        <div>Last bot move: {JSON.stringify(this.state.ai_says)}</div>
         <DiceStock
           dice={this.state.player2.dice}
           selectedDie={this.state.selected_die}
