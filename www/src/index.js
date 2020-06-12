@@ -148,6 +148,10 @@ class Game extends React.Component {
     return coord_card ? coord_card[1] : undefined;
   }
 
+  deleteDie(dice, target_die) {
+    dice.splice(dice.findIndex(die => _.isEqual(die, target_die)), 1);
+  }
+
   handleDieClick(die) {
     this.setState({ selected_die: die, selected_card: null });
   }
@@ -158,16 +162,20 @@ class Game extends React.Component {
       this.setState({ selected_card: null });
     } else if (this.state.selected_die !== null) {
       // Place selected die on this card.
-      const move = { kind: 'place', what: this.state.selected_die, where: coord };
+      const move = { 'Place': [this.state.selected_die, coord] };
       const history = this.state.history.concat([move]);
       this.applyMove(move);
       this.setState({ selected_die: null, history: history });
     } else if (this.state.selected_card !== null) {
       // Move a die from previously selected card to this one.
-      const move = { kind: 'move', from: this.state.selected_card, to: coord };
-      const history = this.state.history.concat([move]);
-      this.applyMove(move);
-      this.setState({ selected_die: null, selected_card: null, history: history });
+      const card = this.getCardAtCoord(this.state.board, this.state.selected_card);
+      if (card.dice.length > 0) {
+        let die = _.last(card.dice);
+        const move = { 'Move': [die, this.state.selected_card, coord] };
+        const history = this.state.history.concat([move]);
+        this.applyMove(move);
+        this.setState({ selected_die: null, selected_card: null, history: history });
+      }
     } else {
       // Select first card.
       this.setState({ selected_die: null, selected_card: coord });
@@ -175,33 +183,62 @@ class Game extends React.Component {
   }
 
   applyMove(move) {
-    switch (move.kind) {
-      case 'place':
-        // Delete die from this player's supply.
-        if (this.state.player1_moves) {
-          let player1_copy = _.cloneDeep(this.state.player1);
-          player1_copy.dice.splice(player1_copy.dice.findIndex(d => d === move.what), 1);
-          this.setState({ player1: player1_copy });
-        } else {
-          let player2_copy = _.cloneDeep(this.state.player2);
-          player2_copy.dice.splice(player2_copy.dice.findIndex(d => d === move.what), 1);
-          this.setState({ player2: player2_copy });
-        }
+    for (var kind in move) {
+      switch (kind) {
+        case 'Place': {
+          const what = move[kind][0];
+          const where = move[kind][1];
 
-        // Put the die on the card.
-        let board_copy = _.cloneDeep(this.state.board);
-        let card = this.getCardAtCoord(board_copy, move.where);
-        card.dice.push(move.what);
-        this.setState({
-          board: board_copy,
-          player1_moves: !this.state.player1_moves
-        });
+          // Delete die from this player's supply.
+          if (this.state.player1_moves) {
+            let player1_copy = _.cloneDeep(this.state.player1);
+            this.deleteDie(player1_copy.dice, what);
+            this.setState({ player1: player1_copy });
+          } else {
+            let player2_copy = _.cloneDeep(this.state.player2);
+            this.deleteDie(player2_copy.dice, what);
+            this.setState({ player2: player2_copy });
+          }
 
-        break;
+          // Put the die on the card.
+          let board_copy = _.cloneDeep(this.state.board);
+          let card = this.getCardAtCoord(board_copy, where);
+          card.dice.push(what);
+          this.setState({
+            board: board_copy,
+            player1_moves: !this.state.player1_moves
+          });
 
-      default:
-        break;
+          break;
+        };
 
+        case 'Move': {
+          const what = move[kind][0];
+          const from = move[kind][1];
+          const to = move[kind][2];
+
+          let board_copy = _.cloneDeep(this.state.board);
+
+          // Delete die from one card
+          let from_card = this.getCardAtCoord(board_copy, from);
+          this.deleteDie(from_card.dice, what);
+
+          // Put the die on another card.
+          let to_card = this.getCardAtCoord(board_copy, to);
+          to_card.dice.push(what);
+
+          this.setState({
+            board: board_copy,
+            player1_moves: !this.state.player1_moves
+          });
+
+          break;
+        };
+
+        default:
+          break;
+
+      }
     }
   }
 
@@ -211,14 +248,7 @@ class Game extends React.Component {
   }
 
   applyBotAdvice() {
-    const move = this.state.ai_says;
-    for (const kind in move) {
-      if (kind === "Place") {
-        const [what, where] = move[kind];
-        // what is a coordinate
-        // where is a die
-      }
-    }
+    this.applyMove(this.state.ai_says);
   }
 
   render() {
@@ -303,13 +333,24 @@ ReactDOM.render(
 // Utils.
 
 function ppMove(move) {
-  switch (move.kind) {
-    case 'place':
-      return 'place ' + ppDie(move.what) + ' at card ' + JSON.stringify(move.where);
-    case 'move':
-      return 'move from card ' + JSON.stringify(move.from) + ' to card ' + JSON.stringify(move.to);
-    default:
-      return 'unknown move';
+  for (var attr in move) {
+    switch (attr) {
+      case 'Place': {
+        const what = move[attr][0];
+        const where = move[attr][1];
+        return 'place ' + ppDie(what) + ' at card with coordinates ' + JSON.stringify(where);
+      }
+
+      case 'Move': {
+        const what = move[attr][0];
+        const from = move[attr][1];
+        const to = move[attr][2];
+        return 'move ' + ppDie(what) + ' from card ' + JSON.stringify(from) + ' to card ' + JSON.stringify(to);
+      }
+
+      default:
+        return 'unknown move';
+    }
   }
 }
 
