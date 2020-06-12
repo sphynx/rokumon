@@ -118,6 +118,7 @@ function GameInfo(props) {
 
 class Game extends React.Component {
   constructor(props) {
+    console.log("Game constructor");
     super(props);
 
     const game = props.game_data;
@@ -161,6 +162,7 @@ class Game extends React.Component {
   }
 
   handleCardClick(coord) {
+    console.log("handling card click");
     if (this.state.selected_card === coord) {
       // Deselect previously selected card.
       this.setState({ selected_card: null });
@@ -195,13 +197,14 @@ class Game extends React.Component {
   }
 
   validateMove(move) {
+    console.log("validating move...");
     return this.props.playground.validate_move(move);
   }
 
   applyMove(move) {
+    console.log("applying move " + JSON.stringify(move));
     const history = this.state.history.concat([move]);
     for (var kind in move) {
-
       switch (kind) {
         case 'Place': {
           function go(game, state) {
@@ -270,15 +273,19 @@ class Game extends React.Component {
   }
 
   getMoveFromBot() {
+    console.log("getting move from bot...");
     const move = this.props.playground.get_move();
+    console.log("got move" + JSON.stringify(move));
     this.applyMove(move);
   }
 
   sendMoveToBot(move) {
+    console.log("send move to bot");
     this.props.playground.send_move(move);
   }
 
   render() {
+    console.log("render");
     const who_moves = this.state.player1_moves ? this.state.player1.name : this.state.player2.name;
     const sel_card_coord = this.state.selected_card;
     const card = this.getCardAtCoord(this.state.board, sel_card_coord);
@@ -314,14 +321,17 @@ class Game extends React.Component {
   }
 
   componentDidMount() {
+    console.log("Game componentDidMount");
     if (this.botToMove()) {
       this.getMoveFromBot();
     }
   }
 
   componentDidUpdate(prevProps, prevState) {
+    console.log("Game componentDidUodate");
     if (this.state.history.length > prevState.history.length) {
       if (this.botToMove()) {
+        console.log("Game componentDidUpdate: asking for bot move");
         this.getMoveFromBot();
       }
     }
@@ -353,7 +363,7 @@ class App extends React.Component {
       const wasm = await import('rokumon_wasm');
 
       // TODO: get those from UI
-      const bot_moves_first = true;
+      const bot_moves_first = false;
       const opts = wasm.Opts.new(false, true, bot_moves_first);
       let playground = wasm.Playground.new(opts);
 
