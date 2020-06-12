@@ -140,28 +140,11 @@ class Game extends React.Component {
       selected_card: null,
       selected_die: null,
     }
+
   }
 
-  updateAllGame(game) {
-    const board = game.board;
-    const player1 = game.player1;
-    const player2 = game.player2;
-    const player1_moves = game.player1_moves;
-    const history = game.history;
-
-    this.setState({
-      board: {
-        grid: board.grid,
-        cards: board.cards
-      },
-      player1_moves,
-      player1,
-      player2,
-      history,
-
-      selected_card: null,
-      selected_die: null,
-    });
+  botToMove() {
+    return (this.state.player1_moves === this.props.bot_moves_first);
   }
 
   getCardAtCoord(board, target_coord) {
@@ -293,7 +276,6 @@ class Game extends React.Component {
 
   sendMoveToBot(move) {
     this.props.playground.send_move(move);
-    this.getMoveFromBot();
   }
 
   render() {
@@ -330,6 +312,20 @@ class Game extends React.Component {
       </div>
     );
   }
+
+  componentDidMount() {
+    if (this.botToMove()) {
+      this.getMoveFromBot();
+    }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.history.length > prevState.history.length) {
+      if (this.botToMove()) {
+        this.getMoveFromBot();
+      }
+    }
+  }
 }
 
 class App extends React.Component {
@@ -340,7 +336,11 @@ class App extends React.Component {
 
   render() {
     return this.state.wasm_loaded
-      ? <Game game_data={this.state.game} playground={this.state.playground} />
+      ? <Game
+        game_data={this.state.game}
+        playground={this.state.playground}
+        bot_moves_first={this.state.bot_moves_first}
+      />
       : <span>Loading wasm...</span>;
   }
 
@@ -353,11 +353,12 @@ class App extends React.Component {
       const wasm = await import('rokumon_wasm');
 
       // TODO: get those from UI
-      const opts = wasm.Opts.new(false, true, false);
+      const bot_moves_first = true;
+      const opts = wasm.Opts.new(false, true, bot_moves_first);
       let playground = wasm.Playground.new(opts);
 
       const game = playground.get_game();
-      this.setState({ wasm, wasm_loaded: true, game, playground });
+      this.setState({ wasm, wasm_loaded: true, game, bot_moves_first, playground });
 
     } catch (err) {
       console.error(`Unexpected error in loadWasm. Message: ${err.message}`);
