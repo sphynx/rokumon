@@ -1,9 +1,10 @@
-use crate::card::{DiceColor, Die};
+// use crate::card::{DiceColor, Die};
 use crate::coord::Coord;
 use crate::game::{Game, GameMove, GameResult};
 use crate::play::Strategy;
 
-use rubot::{self, Bot, Depth, Logger, ToCompletion};
+use cfg_if::cfg_if;
+use rubot::{self, Bot, Depth, ToCompletion};
 
 use std::i32;
 use std::time::Duration;
@@ -84,6 +85,43 @@ fn evaluate_for_first_player(game: &Game) -> i32 {
     }
 }
 
+#[cfg(feature = "for_wasm")]
+pub mod web_duration {
+    use rubot::{IntoRunCondition, RunCondition};
+    use std::time::Duration;
+
+    pub struct WebDuration(pub Duration);
+
+    impl IntoRunCondition for WebDuration {
+        type RunCondition = WebInstant;
+
+        fn into_run_condition(self) -> WebInstant {
+            let window = web_sys::window().expect("should have a window in this context");
+            let performance = window.performance().expect("performance should be available");
+            let now = performance.now();
+            WebInstant(self.0.as_millis() as f64 + now)
+        }
+    }
+
+    pub struct WebInstant(f64);
+
+    impl RunCondition for WebInstant {
+        #[inline]
+        fn step(&mut self) -> bool {
+            let window = web_sys::window().expect("should have a window in this context");
+            let performance = window.performance().expect("performance should be available");
+            performance.now() < self.0
+        }
+
+        #[inline]
+        fn depth(&mut self, _: u32) -> bool {
+            let window = web_sys::window().expect("should have a window in this context");
+            let performance = window.performance().expect("performance should be available");
+            performance.now() < self.0
+        }
+    }
+}
+
 pub struct AlphaBetaAI {
     duration: u64,
     depth: u32,
@@ -120,15 +158,21 @@ impl Strategy for AlphaBetaAI {
     fn get_move(&mut self, game: &Game) -> GameMove<Coord> {
         macro_rules! run_ai_until {
             ($condition:expr) => {
-                let mut logger = Logger::new($condition);
-                let action = self.bot.detailed_select(&game, &mut logger).unwrap();
-                println!(
-                    "AI log: steps: {}, depth: {}, completed: {}, duration: {:?}",
-                    logger.steps(),
-                    logger.depth(),
-                    logger.completed(),
-                    logger.duration()
-                );
+                let action = if cfg!(feature = "for_wasm") {
+                    // no logger, since it uses Duration which is not directly supported in WASM
+                    self.bot.detailed_select(&game, $condition).unwrap()
+                } else {
+                    let mut logger = rubot::Logger::new($condition);
+                    let action = self.bot.detailed_select(&game, &mut logger).unwrap();
+                    println!(
+                        "AI log: steps: {}, depth: {}, completed: {}, duration: {:?}",
+                        logger.steps(),
+                        logger.depth(),
+                        logger.completed(),
+                        logger.duration()
+                    );
+                    action
+                };
 
                 // Evaluation from current player perspective.
                 println!("AI evaluation: {}", pp_evaluation(action.fitness));
@@ -164,9 +208,16 @@ impl Strategy for AlphaBetaAI {
             _ => {
                 // Now just run alpha-beta.
                 if self.duration != 0 {
-                    let duration = Duration::from_secs(self.duration);
-                    println!("Running AI with duration {:?}...", &duration);
-                    run_ai_until!(duration);
+                    cfg_if! {
+                        if #[cfg(feature = "for_wasm")] {
+                            let web_duration = web_duration::WebDuration(Duration::from_secs(self.duration));
+                            run_ai_until!(web_duration);
+                        } else {
+                            let duration = Duration::from_secs(self.duration);
+                            println!("Running AI with duration {:?}...", &duration);
+                            run_ai_until!(duration);
+                        }
+                    }
                 } else if self.depth != 0 {
                     let depth = Depth(self.depth);
                     println!("Running AI with depth {:?}...", &depth);
@@ -195,7 +246,7 @@ mod test {
     use super::*;
 
     use crate::board::Layout;
-    use crate::card::Deck;
+    use crate::card::{Deck, DiceColor, Die};
     use crate::coord::UserCoord;
     use crate::game::Rules;
     use failure::Fallible;

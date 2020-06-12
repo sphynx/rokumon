@@ -41,8 +41,8 @@ impl Playground {
             Game::new(Layout::Rectangle6, deck, Rules::new(opts.enable_fight, false))
         };
 
-        //let ai = AlphaBetaAI::with_duration(true, 3);
-        let ai = AlphaBetaAI::with_depth(true, 6);
+        let ai = AlphaBetaAI::with_duration(true, 10);
+        //let ai = AlphaBetaAI::with_depth(true, 10);
         Self { ai, game }
     }
 
