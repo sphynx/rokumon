@@ -184,23 +184,35 @@ class Game extends React.Component {
     } else if (this.state.selected_die !== null) {
       // Place selected die on this card.
       const move = { 'Place': [this.state.selected_die, coord] };
-      this.applyMove(move);
-      this.sendMoveToBot(move);
-      this.setState({ selected_die: null });
+      if (this.validateMove(move)) {
+        this.applyMove(move);
+        this.sendMoveToBot(move);
+        this.setState({ selected_die: null });
+      } else {
+        alert('invalid place move');
+      }
     } else if (this.state.selected_card !== null) {
       // Move a die from previously selected card to this one.
       const card = this.getCardAtCoord(this.state.board, this.state.selected_card);
       if (card.dice.length > 0) {
         let die = _.last(card.dice);
         const move = { 'Move': [die, this.state.selected_card, coord] };
-        this.applyMove(move);
-        this.sendMoveToBot(move);
-        this.setState({ selected_die: null, selected_card: null });
+        if (this.validateMove(move)) {
+          this.applyMove(move);
+          this.sendMoveToBot(move);
+          this.setState({ selected_die: null, selected_card: null });
+        } else {
+          alert('invalid move move');
+        }
       }
     } else {
       // Select first card.
       this.setState({ selected_die: null, selected_card: coord });
     }
+  }
+
+  validateMove(move) {
+    return this.props.playground.validate_move(move);
   }
 
   applyMove(move) {
@@ -209,55 +221,61 @@ class Game extends React.Component {
 
       switch (kind) {
         case 'Place': {
-          const what = move[kind][0];
-          const where = move[kind][1];
+          function go(game, state) {
+            const what = move[kind][0];
+            const where = move[kind][1];
 
-          // Delete die from this player's supply.
-          if (this.state.player1_moves) {
-            let player1_copy = _.cloneDeep(this.state.player1);
-            this.deleteDie(player1_copy.dice, what);
-            this.setState({ player1: player1_copy });
-          } else {
-            let player2_copy = _.cloneDeep(this.state.player2);
-            this.deleteDie(player2_copy.dice, what);
-            this.setState({ player2: player2_copy });
-          }
+            let player1_copy = _.cloneDeep(state.player1);
+            let player2_copy = _.cloneDeep(state.player2);
+            // Delete die from this player's supply.
+            if (state.player1_moves) {
+              game.deleteDie(player1_copy.dice, what);
+            } else {
+              game.deleteDie(player2_copy.dice, what);
+            }
 
-          // Put the die on the card.
-          let board_copy = _.cloneDeep(this.state.board);
-          let card = this.getCardAtCoord(board_copy, where);
-          card.dice.push(what);
+            // Put the die on the card.
+            let board_copy = _.cloneDeep(state.board);
+            let card = game.getCardAtCoord(board_copy, where);
+            card.dice.push(what);
 
-          this.setState({
-            board: board_copy,
-            player1_moves: !this.state.player1_moves,
-            history,
-          });
+            return ({
+              board: board_copy,
+              player1: player1_copy,
+              player2: player2_copy,
+              player1_moves: !state.player1_moves,
+              history,
+            });
+          };
 
+          this.setState((state, props) => go(this, state));
           break;
         };
 
         case 'Move': {
-          const what = move[kind][0];
-          const from = move[kind][1];
-          const to = move[kind][2];
+          function go(game, state) {
+            const what = move[kind][0];
+            const from = move[kind][1];
+            const to = move[kind][2];
 
-          let board_copy = _.cloneDeep(this.state.board);
+            let board_copy = _.cloneDeep(state.board);
 
-          // Delete die from one card
-          let from_card = this.getCardAtCoord(board_copy, from);
-          this.deleteDie(from_card.dice, what);
+            // Delete die from one card
+            let from_card = game.getCardAtCoord(board_copy, from);
+            game.deleteDie(from_card.dice, what);
 
-          // Put the die on another card.
-          let to_card = this.getCardAtCoord(board_copy, to);
-          to_card.dice.push(what);
+            // Put the die on another card.
+            let to_card = game.getCardAtCoord(board_copy, to);
+            to_card.dice.push(what);
 
-          this.setState({
-            board: board_copy,
-            player1_moves: !this.state.player1_moves,
-            history
-          });
+            return ({
+              board: board_copy,
+              player1_moves: !state.player1_moves,
+              history
+            });
+          };
 
+          this.setState((state, props) => go(this, state));
           break;
         };
 
@@ -271,21 +289,11 @@ class Game extends React.Component {
   getMoveFromBot() {
     const move = this.props.playground.get_move();
     this.applyMove(move);
-    this.props.playground.send_move(move);
-    this.setState({ ai_says: move })
-  }
-
-  sendLastMove() {
-    const move = _.last(this.state.history);
-    this.props.playground.send_move(move);
-    const game_data = this.props.playground.get_game();
-    this.updateAllGame(game_data);
   }
 
   sendMoveToBot(move) {
     this.props.playground.send_move(move);
-    const game_data = this.props.playground.get_game();
-    this.updateAllGame(game_data);
+    this.getMoveFromBot();
   }
 
   render() {
@@ -296,7 +304,6 @@ class Game extends React.Component {
 
     return (
       <div className="game">
-        <button onClick={() => this.getMoveFromBot()}>Get bot's move</button>
         <div>Last bot move: {JSON.stringify(this.state.ai_says)}</div>
         <DiceStock
           dice={this.state.player2.dice}
@@ -342,13 +349,13 @@ class App extends React.Component {
   }
 
   loadWasm = async () => {
-    console.log("loadWasm");
     try {
       const wasm = await import('rokumon_wasm');
 
       // TODO: get those from UI
-      const opts = wasm.Opts.new(false, true);
+      const opts = wasm.Opts.new(false, true, false);
       let playground = wasm.Playground.new(opts);
+
       const game = playground.get_game();
       this.setState({ wasm, wasm_loaded: true, game, playground });
 

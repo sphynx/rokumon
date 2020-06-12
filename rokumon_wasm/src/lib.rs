@@ -13,12 +13,17 @@ use rokumon::play::Strategy;
 pub struct Opts {
     enable_fight: bool,
     hex_grid: bool,
+    bot_goes_first: bool,
 }
 
 #[wasm_bindgen]
 impl Opts {
-    pub fn new(enable_fight: bool, hex_grid: bool) -> Self {
-        Self { enable_fight, hex_grid }
+    pub fn new(enable_fight: bool, hex_grid: bool, bot_goes_first: bool) -> Self {
+        Self {
+            enable_fight,
+            hex_grid,
+            bot_goes_first,
+        }
     }
 }
 
@@ -41,7 +46,7 @@ impl Playground {
             Game::new(Layout::Rectangle6, deck, Rules::new(opts.enable_fight, false))
         };
 
-        let ai = AlphaBetaAI::with_duration(true, 1);
+        let ai = AlphaBetaAI::with_duration(opts.bot_goes_first, 1);
         Self { ai, game }
     }
 
@@ -51,7 +56,13 @@ impl Playground {
 
     pub fn get_move(&mut self) -> JsValue {
         let mov = self.ai.get_move(&self.game);
+        self.game.apply_move(&mov).unwrap();
         JsValue::from_serde(&mov).unwrap()
+    }
+
+    pub fn validate_move(&self, mov_value: &JsValue) -> bool {
+        let mov: GameMove<Coord> = mov_value.into_serde().unwrap();
+        self.game.validate_move(&mov).is_ok()
     }
 
     pub fn send_move(&mut self, mov_value: &JsValue) {

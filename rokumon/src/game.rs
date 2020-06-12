@@ -226,7 +226,7 @@ impl Game {
 
     /// Validates a given move in this particular game state, gives an
     /// explanation if not valid, otherwise returns ().
-    fn validate_move(&self, game_move: &GameMove<Coord>) -> Fallible<()> {
+    pub fn validate_move(&self, game_move: &GameMove<Coord>) -> Fallible<()> {
         use GameMove::*;
 
         ensure!(
