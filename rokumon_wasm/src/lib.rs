@@ -14,15 +14,17 @@ pub struct Opts {
     enable_fight: bool,
     hex_grid: bool,
     bot_goes_first: bool,
+    duration: u8,
 }
 
 #[wasm_bindgen]
 impl Opts {
-    pub fn new(enable_fight: bool, hex_grid: bool, bot_goes_first: bool) -> Self {
+    pub fn new(enable_fight: bool, hex_grid: bool, bot_goes_first: bool, duration: u8) -> Self {
         Self {
             enable_fight,
             hex_grid,
             bot_goes_first,
+            duration,
         }
     }
 }
@@ -46,7 +48,7 @@ impl Playground {
             Game::new(Layout::Rectangle6, deck, Rules::new(opts.enable_fight, false))
         };
 
-        let ai = AlphaBetaAI::with_duration(opts.bot_goes_first, 1);
+        let ai = AlphaBetaAI::with_duration(opts.bot_goes_first, opts.duration as u64);
         Self { ai, game }
     }
 
