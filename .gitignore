@@ -1,6 +1,6 @@
 /target
 rokumon_console_ui/target
 *.stacks
-*.svg
 history.txt
 www/node_modules
+**/.DS_Store
