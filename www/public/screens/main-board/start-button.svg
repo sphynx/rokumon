@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="122" height="50" viewBox="0 0 122 50">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #6c5fac;
+      }
+
+      .cls-2 {
+        fill: #fff;
+        font-size: 20px;
+        font-family: Roboto-Medium, Roboto;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+      }
+    </style>
+  </defs>
+  <g id="Group_88" data-name="Group 88" transform="translate(-115 -360)">
+    <rect id="Rectangle_50" data-name="Rectangle 50" class="cls-1" width="122" height="50" rx="5" transform="translate(115 360)"/>
+    <text id="START" class="cls-2" transform="translate(176 392)"><tspan x="-35.039" y="0">START</tspan></text>
+  </g>
+</svg>

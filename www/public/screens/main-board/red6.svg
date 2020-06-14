@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #ff5c67;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <g id="Group_163" data-name="Group 163" transform="translate(-1596 -745)">
+    <rect id="Rectangle_86" data-name="Rectangle 86" class="cls-1" width="40" height="40" rx="5" transform="translate(1596 745)"/>
+    <g id="Group_133" data-name="Group 133" transform="translate(1620 770)">
+      <circle id="Ellipse_1" data-name="Ellipse 1" class="cls-2" cx="4" cy="4" r="4"/>
+    </g>
+    <g id="Group_142" data-name="Group 142" transform="translate(1620 761)">
+      <circle id="Ellipse_1-2" data-name="Ellipse 1" class="cls-2" cx="4" cy="4" r="4"/>
+    </g>
+    <g id="Group_145" data-name="Group 145" transform="translate(1605 752)">
+      <circle id="Ellipse_1-3" data-name="Ellipse 1" class="cls-2" cx="4" cy="4" r="4"/>
+    </g>
+    <g id="Group_138" data-name="Group 138" transform="translate(1605 770)">
+      <circle id="Ellipse_1-4" data-name="Ellipse 1" class="cls-2" cx="4" cy="4" r="4"/>
+      <circle id="Ellipse_23" data-name="Ellipse 23" class="cls-2" cx="4" cy="4" r="4" transform="translate(0 -9)"/>
+    </g>
+    <g id="Group_150" data-name="Group 150" transform="translate(1620 752)">
+      <circle id="Ellipse_1-5" data-name="Ellipse 1" class="cls-2" cx="4" cy="4" r="4"/>
+    </g>
+  </g>
+</svg>

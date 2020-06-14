@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="16" viewBox="0 0 200 16">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #404046;
+        font-size: 14px;
+        font-family: Roboto-Light, Roboto;
+        font-weight: 300;
+      }
+    </style>
+  </defs>
+  <text id="You_are_playing_with_Anonymous" data-name="You are playing with Anonymous" class="cls-1" transform="translate(100 13)"><tspan x="-99.726" y="0">You are playing with Anonymous</tspan></text>
+</svg>
