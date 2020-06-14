@@ -1,0 +1,29 @@
+#opponent {
+    display: flex;
+    padding: 0px;
+    border: 0px;
+}
+
+#bot_opponent {
+    background-color: #ff5c67;
+}
+
+#human_opponent {
+    background-color: #d8d6de;
+}
+
+#watch {
+    background-color: #d8d6de;
+}
+
+.opponent_choice {
+    width: 100px;
+    height: 100px;
+    color: #d8d6de;
+    /* border: 1px solid black; */
+    margin-right: 4px;
+    margin-left: 4px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+}
