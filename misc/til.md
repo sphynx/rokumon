@@ -191,3 +191,29 @@ cfg_if! {
 ```
 
 and it will work. `cfg_if` is just a clever declarative macro defined with `macro_rules!`. It collects all the statements and annotates them with explicit `#[cfg]` instead of just `cfg!`.
+
+## React and long calls to WebAssembly.
+
+In order to organize a game between a human and a bot, I needed to get moves alternatingly from the bot and from human. Getting move from human is easy in React: a move is basically a JS object produced in an event handler, i.e. user clicks a die and a card, JS event handler produces certain move object and then I apply that move object to the state, update the state and Reacts re-renders the view and updates DOM. 
+
+The question is: how and when do I need to request bot's move? I started with having an explicit button: "Get bot's move", you click that button, JS makes a call to WebAssembly, everything freezes for 3 seconds and then you get your move and then everything happens in the same way as this move has been received from human: the state is updated, UI is redrawn.
+
+Then, as the next step, I've just added that long WebAssembly call after my components have been updated after user move, immediately asking for bot's move, which made sense. I put in `componentDidUpdate` React lifecycling method which seemed to be what I needed, since it happens after state has been updated and `render` has been called. So I expected that it will render user move, show it to me and then will wait for WebAssembly call return.
+
+However, what was happening is that I didn't get the user move on the screen! Instead both moves were shown only after bot's reply! This puzzled me, since I explicitly saw that `render` after my user's move was called.
+
+However, what's happening is:
+
+1. `render` just draws some React element, which is something like virtual DOM
+2. then it calculated the diff of that with the previous state to only update necessary parts
+3. then it *continues* with `componentDidUpdate` call before actually returning, so the browser's rendering is not happening until React returns. That's why I was not seeing the human's move render before starting the long WebAssembly call.
+
+In order to fix that I can either make the call asynchronous (by, say, wrapping it `setTimeout`) or using WebWorkers to run it in a separate thread. For now I've just used `setTimeout(getMoveFromTheBot, 10)` to give browser a chance to re-render.
+
+### Helpful links:
+
+- [My question on StackOverflow](https://stackoverflow.com/questions/62354011/react-doesnt-update-dom-during-render-when-there-is-a-long-running-function-i)
+- [Another relevant SO question](https://stackoverflow.com/questions/41490837/reactjs-render-called-but-dom-not-updated)
+- [Jake Archibald: "In The Loop"](https://www.youtube.com/watch?v=cCOL7MC4Pl0&t=685s), a nice talk with good visualizations and good jokes from the speaker
+- ["What the heck is event loop anyway"](https://www.youtube.com/watch?v=8aGhZQkoFbQ) -- another video about event loop in the browser
+- [SO question about React updating the DOM](https://stackoverflow.com/questions/57100042/when-and-in-what-order-does-react-update-the-dom)
