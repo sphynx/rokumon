@@ -217,3 +217,15 @@ In order to fix that I can either make the call asynchronous (by, say, wrapping 
 - [Jake Archibald: "In The Loop"](https://www.youtube.com/watch?v=cCOL7MC4Pl0&t=685s), a nice talk with good visualizations and good jokes from the speaker
 - ["What the heck is event loop anyway"](https://www.youtube.com/watch?v=8aGhZQkoFbQ) -- another video about event loop in the browser
 - [SO question about React updating the DOM](https://stackoverflow.com/questions/57100042/when-and-in-what-order-does-react-update-the-dom)
+
+# CSS
+
+## `<fieldset>` can't be flex container in Chrome
+
+See [Flexbug #9](https://github.com/philipwalton/flexbugs#flexbug-9) for more details.
+
+## SVG images are scaled differently to raster images (like PNG or JPG)
+
+So `object-position` does not work as expected for them and one can't use `object-position: center` to center the image.
+
+See ["Hot to scale SVG" article from css-tricks](https://css-tricks.com/scale-svg) for details.
