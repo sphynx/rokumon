@@ -27,22 +27,27 @@ export class GameSetup extends React.Component {
     return (
       <div>
         <label>Pick your opponent:</label>
-        <fieldset id="opponent">
-          <div id="bot_opponent" className="opponent_choice">
+        <div className="opponent">
+          <div id="bot_opponent" className="opponent-choice">
             <div>
               <img src="/screens/start-screen/bot.svg" />
-              <div>Bot</div>
+              <label>Bot</label>
             </div>
           </div>
-          <div id="human_opponent" className="opponent_choice">
-            <img src="/screens/start-screen/human.svg" />
-            Human
+          <div id="human_opponent" className="opponent-choice">
+            <div>
+              <img src="/screens/start-screen/human.svg" />
+              <label>Human</label>
+            </div>
           </div>
-          <div id="watch" className="opponent_choice">
-            <img src="/screens/start-screen/watch.svg" />
-
+          <div id="watch" className="opponent-choice">
+            <div>
+              <img src="/screens/start-screen/watch.svg" />
+              <label>Watch</label>
+              <label>Watch</label>
+            </div>
           </div>
-        </fieldset>
+        </div>
       </div>
     );
   }

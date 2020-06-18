@@ -1,7 +1,5 @@
-#opponent {
+.opponent {
     display: flex;
-    padding: 0px;
-    border: 0px;
 }
 
 #bot_opponent {
@@ -16,14 +14,18 @@
     background-color: #d8d6de;
 }
 
-.opponent_choice {
-    width: 100px;
-    height: 100px;
-    color: #d8d6de;
-    /* border: 1px solid black; */
-    margin-right: 4px;
-    margin-left: 4px;
-    border-radius: 5px;
+.opponent-choice {
     display: flex;
     justify-content: center;
+    align-items: center;
+    width: 100px;
+    height: 100px;
+    margin: 0px 4px;
+    border-radius: 5px;
+}
+
+.opponent-choice > div {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
 }
