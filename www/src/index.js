@@ -1,10 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
+import './index.css';
+
 import { Game } from './game.js'
 import { GameSetup } from './start.js'
-
-import './index.css';
 
 class GameLoader extends React.Component {
   constructor(props) {

@@ -1,5 +1,11 @@
+@import 'fonts.css';
+
+html {
+  font-size: 10px;
+}
+
 body {
-  font: 14px "Century Gothic", Futura, sans-serif;
+  font-family: "Roboto-Light", sans-serif;
   margin: 20px;
 }
 

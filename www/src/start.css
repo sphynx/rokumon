@@ -1,9 +1,31 @@
+/* Centering of the main screen */
+
+.root {
+    display: flex;
+    justify-content: center;
+}
+
+/* Each option */
+
+.option-label {
+    display: inline-block;
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.option-block {
+    margin-bottom: 2rem;
+}
+
+/* Opponent */
+
 .opponent {
     display: flex;
 }
 
 #bot_opponent {
     background-color: #ff5c67;
+    color: white;
 }
 
 #human_opponent {
@@ -17,15 +39,99 @@
 .opponent-choice {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-end;
     width: 100px;
     height: 100px;
     margin: 0px 4px;
     border-radius: 5px;
 }
 
+.opponent-choice img {
+    margin-bottom: 1rem;
+}
+
+.opponent-choice label {
+    font-size: 1.2rem;
+    text-transform: lowercase;
+}
+
 .opponent-choice > div {
     display: flex;
     flex-direction: column;
     text-align: center;
+    margin-bottom: 2rem;
+}
+
+/* Level */
+
+select {
+    display: block;
+}
+
+/* Turn */
+
+.turn {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.turn-button {
+    display: block;
+    margin: 0px 0.5rem;
+    height: 75px;
+    max-width: 155px;
+    min-width: 120px;
+    border-radius: 5px;
+    background-color: #d8d6de;
+    color: #777583;
+    text-align: center;
+    flex: 1;
+}
+
+.turn-button:hover {
+    background-color: #21cebe;
+    color: white;
+}
+
+
+.turn-button span {
+    display: block;
+}
+
+.turn-button span:first-child {
+    font-family: 'Baloo Da 2', cursive;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    font-size: 2.5rem;
+    text-transform: uppercase;
+
+    margin-top: 1rem;
+}
+
+.turn-button span:last-child {
+    font-size: 1rem;
+}
+
+/* Submit */
+
+.submit-parent {
+    display: flex;
+    justify-content: center;
+    max-width: 320px;
+    margin-top: 5rem;
+}
+
+.submit-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    height: 50px;
+    width: 100px;
+    border-radius: 5px;
+    background-color: #6c5fac;
+    color: white;
+    font-size: 2rem;
+    font-weight: 500;
+    text-transform: uppercase;
 }
