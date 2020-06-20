@@ -1,8 +1,12 @@
 /* Centering of the main screen */
-
 .root {
     display: flex;
     justify-content: center;
+}
+
+.root > div {
+    flex-shrink: 1;
+    min-width: 12rem;
 }
 
 /* Each option */
@@ -80,7 +84,7 @@ select {
     margin: 0px 0.5rem;
     height: 75px;
     max-width: 155px;
-    min-width: 120px;
+    min-width: 110px;
     border-radius: 5px;
     background-color: #d8d6de;
     color: #777583;
