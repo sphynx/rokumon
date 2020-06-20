@@ -22,9 +22,9 @@
 }
 
 /* Opponent */
-
 .opponent {
     display: flex;
+    margin: 0px -4px;
 }
 
 #bot_opponent {
@@ -77,11 +77,12 @@ select {
 .turn {
     display: flex;
     flex-wrap: wrap;
+    margin: 0px -4px;
 }
 
 .turn-button {
     display: block;
-    margin: 0px 0.5rem;
+    margin: 0px 4px;
     height: 75px;
     max-width: 155px;
     min-width: 110px;
