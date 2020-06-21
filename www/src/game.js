@@ -1,8 +1,7 @@
+import './game.css';
+
 import React from 'react';
-
 import _ from 'lodash';
-
-import './index.css';
 
 function Card(props) {
   const kindClass = props.kind.toLowerCase();

@@ -1,0 +1,71 @@
+.card-board {
+  height: 200px;
+  position: relative;
+}
+
+.card {
+  width: 60px;
+  height: 80px;
+  border: 2px solid #999;
+  margin-top: 10px;
+  margin-left: 5px;
+  position: absolute;
+}
+
+.selected-card {
+  background-color: gainsboro;
+}
+
+.jade {
+  border-color: darkseagreen;
+}
+
+.gold {
+  border-color: gold;
+}
+
+.die {
+  margin-right: 10px;
+  font-size: 40px;
+}
+
+.red-die {
+  color: red;
+}
+
+.black-die {
+  color: black;
+}
+
+.white-die {
+  color:blue;
+}
+
+.selected-die {
+  background-color: burlywood;
+}
+
+.die-on-card {
+  margin-right: 10px;
+  font-size: 40px;
+}
+
+.red-die-on-card {
+  color: red;
+}
+
+.black-die-on-card {
+  color: black;
+}
+
+.white-die-on-card {
+  color:blue;
+}
+
+.selected-die-on-card {
+  background-color: burlywood;
+}
+
+.dice-stock {
+  margin-top: 10px;
+}

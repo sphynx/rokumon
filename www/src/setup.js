@@ -1,5 +1,6 @@
+import './setup.css';
+
 import React from 'react';
-import './start.css';
 import _ from 'lodash';
 
 export class GameSetup extends React.Component {
@@ -9,7 +10,7 @@ export class GameSetup extends React.Component {
     this.state = {
       opponents: "HumanAI",
       level: 2,
-      playerGoesFirst: true,
+      player_goes_girst: true,
     };
   }
 
@@ -17,8 +18,8 @@ export class GameSetup extends React.Component {
     this.setState({ opponents });
   }
 
-  handleTurnChange = (playerGoesFirst) => {
-    this.setState({ playerGoesFirst });
+  handleTurnChange = (player_goes_girst) => {
+    this.setState({ player_goes_girst });
   }
 
   handleLevelChange = (e) => {
@@ -31,7 +32,7 @@ export class GameSetup extends React.Component {
         <div className="root-child">
           <Opponent onClick={this.handleOpponentChange} />
           <Level onInput={this.handleLevelChange} />
-          <Turn onClick={this.handleTurnChange} playerGoesFirst={this.state.playerGoesFirst} />
+          <Turn onClick={this.handleTurnChange} playerGoesFirst={this.state.player_goes_girst} />
           <Submit onClick={() => this.props.onSubmit(_.cloneDeep(this.state))} />
         </div>
       </div >
