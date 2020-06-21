@@ -18,8 +18,6 @@ function Card(props) {
       className={`card ${kindClass} ${selectedClass}`}
       onClick={props.onClick}>
 
-      <span className="card-ix">{props.ix}</span>
-
       {props.dice.map((d, ix) =>
         <DieOnCard key={ix} color={d.color} value={d.value} />
       )}
@@ -356,29 +354,21 @@ function ppDie(die) {
 }
 
 function coord_to_position(grid, coord) {
+  const size_x = 80;  // card width + horizontal gap between cards (4px)
+  const size_y = 114; // card height + vertical gap between cards (4px)
+
+  const shift_x = 10;
+  const shift_y = 120;
+
   if (grid === "Hex") {
-    const scale_x = 45;
-    const scale_y = 70;
-    const shift_x = 20;
-    const shift_y = 100;
-
-    const q = coord.x;
-    const r = coord.y;
-    const sqt = Math.sqrt(3);
-
     return {
-      x: shift_x + Math.round(scale_x * (sqt * q + sqt / 2 * r)),
-      y: shift_y + Math.round(scale_y * (3 / 2 * r))
+      x: shift_x + Math.round(size_x * (coord.x + coord.y / 2)),
+      y: shift_y + size_y * coord.y
     }
   } else {
-    const scale_x = 80;
-    const scale_y = 100;
-    const shift_x = 15;
-    const shift_y = 100;
-
     return {
-      x: shift_x + scale_x * coord.x,
-      y: shift_y + scale_y * coord.y
+      x: shift_x + size_x * coord.x,
+      y: shift_y + size_y * coord.y
     }
   }
 }

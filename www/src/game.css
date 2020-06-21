@@ -1,14 +1,15 @@
 .card-board {
-  height: 200px;
+  height: 230px;
   position: relative;
 }
 
 .card {
-  width: 60px;
-  height: 80px;
-  border: 2px solid #999;
+  width: 75px;
+  height: 110px;
+  border: 0px;
   margin-top: 10px;
   margin-left: 5px;
+  border-radius: 5px;
   position: absolute;
 }
 
@@ -17,11 +18,11 @@
 }
 
 .jade {
-  border-color: darkseagreen;
+  background-color: #21cebe;
 }
 
 .gold {
-  border-color: gold;
+  background-color: #f8c945;
 }
 
 .die {
