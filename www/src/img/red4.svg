@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #ff5c67;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <g id="Group_164" data-name="Group 164" transform="translate(-1508 -745)">
+    <rect id="Rectangle_84" data-name="Rectangle 84" class="cls-1" width="40" height="40" rx="5" transform="translate(1508 745)"/>
+    <g id="Group_131" data-name="Group 131" transform="translate(1532 769)">
+      <circle id="Ellipse_1" data-name="Ellipse 1" class="cls-2" cx="4" cy="4" r="4"/>
+    </g>
+    <g id="Group_143" data-name="Group 143" transform="translate(1517 753)">
+      <circle id="Ellipse_1-2" data-name="Ellipse 1" class="cls-2" cx="4" cy="4" r="4"/>
+    </g>
+    <g id="Group_136" data-name="Group 136" transform="translate(1517 769)">
+      <circle id="Ellipse_1-3" data-name="Ellipse 1" class="cls-2" cx="4" cy="4" r="4"/>
+    </g>
+    <g id="Group_148" data-name="Group 148" transform="translate(1532 753)">
+      <circle id="Ellipse_1-4" data-name="Ellipse 1" class="cls-2" cx="4" cy="4" r="4"/>
+    </g>
+  </g>
+</svg>

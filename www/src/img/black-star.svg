@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #3f3b76;
+      }
+
+      .cls-2 {
+        fill: #fff;
+        font-size: 28px;
+        font-family: ZapfDingbatsITC, '.Apple Symbols Fallback';
+      }
+    </style>
+  </defs>
+  <g id="Group_187" data-name="Group 187" transform="translate(-267 -156)">
+    <rect id="Rectangle_87" data-name="Rectangle 87" class="cls-1" width="40" height="40" rx="5" transform="translate(267 156)"/>
+    <text id="_" data-name="✱" class="cls-2" transform="translate(287 186)"><tspan x="-10.418" y="0">✱</tspan></text>
+  </g>
+</svg>

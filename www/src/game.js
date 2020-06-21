@@ -3,10 +3,19 @@ import './game.css';
 import React from 'react';
 import _ from 'lodash';
 
+import red2 from './img/red2.svg'
+import red4 from './img/red4.svg'
+import red6 from './img/red6.svg'
+
+import black1 from './img/black1.svg'
+import black3 from './img/black3.svg'
+import black5 from './img/black5.svg'
+import black_star from './img/black-star.svg'
+
 function Card(props) {
   const kindClass = props.kind.toLowerCase();
-  const selectedClass = props.selected ? 'selected-card' : '';
-  const { x, y } = coord_to_position(props.grid, props.coord);
+  const selectedClass = props.selected ? 'selected' : '';
+  const { x, y } = coordToPosition(props.grid, props.coord);
   const styles = { left: x, top: y };
   return (
     <div
@@ -22,23 +31,24 @@ function Card(props) {
 }
 
 function Die(props) {
-  const die_char = "⚀⚁⚂⚃⚄⚅"[props.value - 1];
-  const selected_clz = props.selected ? 'selected-die' : '';
+  const selected_clz = props.selected ? 'selected' : '';
   return (
-    <span
-      className={`die ${props.color.toLowerCase() + '-die'} ${selected_clz}`}
-      onClick={props.onClick}>
-      {die_char}
-    </span>
+    <img
+      src={dieImage(props.color, props.value)}
+      onClick={props.onClick}
+      className={`die ${selected_clz}`}
+    />
   );
 }
 
 function DieOnCard(props) {
-  const die_char = "⚀⚁⚂⚃⚄⚅"[props.value - 1];
+  const selected_clz = props.selected ? 'selected' : '';
   return (
-    <span className={`die-on-card ${props.color.toLowerCase() + '-die-on-card'}`}>
-      {die_char}
-    </span>
+    <img
+      src={dieImage(props.color, props.value)}
+      onClick={props.onClick}
+      className={`die ${selected_clz}`}
+    />
   );
 }
 
@@ -83,7 +93,7 @@ class Board extends React.Component {
 
 function History(props) {
   return (
-    <div>
+    <div className="history">
       History:
       <ol>
         {props.moves.map((move, ix) =>
@@ -344,7 +354,7 @@ function ppMove(move) {
   }
 }
 
-function coord_to_position(grid, coord) {
+function coordToPosition(grid, coord) {
   const card_width = 75;
   const card_height = 110;
   const horizontal_gap = 5; // px
@@ -367,6 +377,24 @@ function coord_to_position(grid, coord) {
       y: shift_y + size_y * coord.y
     }
   }
+}
+
+function dieImage(color, value) {
+  if (color === 'Red' && value === 2) {
+    return red2;
+  } else if (color === 'Red' && value === 4) {
+    return red4;
+  } else if (color === 'Red' && value === 6) {
+    return red6;
+  } else if (color === 'Black' && value === 1) {
+    return black1;
+  } else if (color === 'Black' && value === 3) {
+    return black3;
+  } else if (color === 'Black' && value === 5) {
+    return black5;
+  } else if (color === 'White' && value === 1) {
+    return black_star;
+  };
 }
 
 function ppDie(die) {

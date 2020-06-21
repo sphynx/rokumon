@@ -54,7 +54,7 @@ class App extends React.Component {
     // TODO: move into constants.
     // App states: 'new' -> 'options collected' -> 'game loader' -> 'wasm loaded' -> 'game shown' -> 'game started'
     // Another state is 'test_board' for testing the board layout quickly.
-    this.state = { app_state: 'test_board', game_options: {} };
+    this.state = { app_state: 'new', game_options: {} };
   }
 
   handleOptionsSubmit = (options) => {
@@ -67,7 +67,7 @@ class App extends React.Component {
     } else if (this.state.app_state === 'options_collected') {
       return <GameLoader game_options={this.state.game_options} />;
     } else if (this.state.app_state === 'test_board') {
-      const default_opts = { level: 2, player_goes_first: true };
+      const default_opts = { level: 3, player_goes_first: true };
       return <GameLoader game_options={default_opts} />;
     }
   }

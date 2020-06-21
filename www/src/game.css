@@ -4,11 +4,15 @@
     align-items: center;
 }
 
+/* Board with cards */
+
 .card-board {
   height: 230px;
   min-width: 325px;
   position: relative;
 }
+
+/* Cards */
 
 .card {
   width: 75px;
@@ -21,7 +25,7 @@
   box-sizing: border-box;
 }
 
-.selected-card {
+.card.selected {
   border: 2px solid red;
 }
 
@@ -33,25 +37,19 @@
   background-color: #f8c945;
 }
 
+/* Dice stock */
+
+.dice-stock {
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
 .die {
   margin-right: 10px;
-  font-size: 40px;
 }
 
-.red-die {
-  color: red;
-}
-
-.black-die {
-  color: black;
-}
-
-.white-die {
-  color:blue;
-}
-
-.selected-die {
-  background-color: burlywood;
+.die.selected {
+  transform: scale(1.1);
 }
 
 .die-on-card {
@@ -59,22 +57,16 @@
   font-size: 40px;
 }
 
-.red-die-on-card {
-  color: red;
-}
-
-.black-die-on-card {
-  color: black;
-}
-
-.white-die-on-card {
-  color:blue;
-}
-
 .selected-die-on-card {
   background-color: burlywood;
 }
 
-.dice-stock {
-  margin-top: 10px;
+/* Extra info */
+
+.game-info {
+  display: none;
+}
+
+.history {
+  margin-top: 50px;
 }

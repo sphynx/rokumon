@@ -14,7 +14,7 @@ export class GameSetup extends React.Component {
     this.state = {
       opponents: "HumanAI",
       level: 2,
-      player_goes_girst: true,
+      player_goes_first: true,
     };
   }
 
@@ -22,8 +22,8 @@ export class GameSetup extends React.Component {
     this.setState({ opponents });
   }
 
-  handleTurnChange = (player_goes_girst) => {
-    this.setState({ player_goes_girst });
+  handleTurnChange = (player_goes_first) => {
+    this.setState({ player_goes_first });
   }
 
   handleLevelChange = (e) => {
@@ -36,7 +36,7 @@ export class GameSetup extends React.Component {
         <div className="root-child">
           <Opponent onClick={this.handleOpponentChange} />
           <Level onInput={this.handleLevelChange} />
-          <Turn onClick={this.handleTurnChange} playerGoesFirst={this.state.player_goes_girst} />
+          <Turn onClick={this.handleTurnChange} playerGoesFirst={this.state.player_goes_first} />
           <Submit onClick={() => this.props.onSubmit(_.cloneDeep(this.state))} />
         </div>
       </div >
