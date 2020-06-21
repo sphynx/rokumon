@@ -7,11 +7,7 @@ function Card(props) {
   const kindClass = props.kind.toLowerCase();
   const selectedClass = props.selected ? 'selected-card' : '';
   const { x, y } = coord_to_position(props.grid, props.coord);
-  const styles = {
-    left: x,
-    top: y,
-  };
-
+  const styles = { left: x, top: y };
   return (
     <div
       style={styles}
@@ -21,7 +17,6 @@ function Card(props) {
       {props.dice.map((d, ix) =>
         <DieOnCard key={ix} color={d.color} value={d.value} />
       )}
-
     </div>
   );
 }
@@ -284,7 +279,6 @@ export class Game extends React.Component {
 
     return (
       <div className="game">
-        <div>Last bot move: {JSON.stringify(this.state.ai_says)}</div>
         <DiceStock
           dice={this.state.player2.dice}
           selectedDie={this.state.selected_die}
@@ -325,6 +319,7 @@ export class Game extends React.Component {
     }
   }
 }
+
 // Utils.
 
 function ppMove(move) {
@@ -349,16 +344,17 @@ function ppMove(move) {
   }
 }
 
-function ppDie(die) {
-  return die.color + die.value;
-}
-
 function coord_to_position(grid, coord) {
-  const size_x = 80;  // card width + horizontal gap between cards (4px)
-  const size_y = 114; // card height + vertical gap between cards (4px)
+  const card_width = 75;
+  const card_height = 110;
+  const horizontal_gap = 5; // px
+  const vertical_gap = 4; // px
 
-  const shift_x = 10;
-  const shift_y = 120;
+  const size_x = card_width + horizontal_gap;
+  const size_y = card_height + vertical_gap;
+
+  const shift_x = 0;
+  const shift_y = card_height;
 
   if (grid === "Hex") {
     return {
@@ -371,4 +367,8 @@ function coord_to_position(grid, coord) {
       y: shift_y + size_y * coord.y
     }
   }
+}
+
+function ppDie(die) {
+  return die.color + die.value;
 }

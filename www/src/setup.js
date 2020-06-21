@@ -3,6 +3,10 @@ import './setup.css';
 import React from 'react';
 import _ from 'lodash';
 
+import bot_svg from './img/bot.svg';
+import human_svg from './img/human.svg';
+import watch_svg from './img/watch.svg';
+
 export class GameSetup extends React.Component {
   constructor(props) {
     super(props);
@@ -47,19 +51,19 @@ function Opponent(props) {
       <div className="opponent">
         <div id="bot_opponent" className="opponent-choice" onClick={() => props.onClick("HumanAI")}>
           <div>
-            <img alt="bot" src="/screens/start-screen/bot.svg" />
+            <img src={bot_svg} alt="bot" />
             <label>Bot</label>
           </div>
         </div>
         <div id="human_opponent" className="opponent-choice" onClick={() => props.onClick("HumanHuman")}>
           <div>
-            <img alt="human" src="/screens/start-screen/human.svg" />
+            <img src={human_svg} alt="human" />
             <label>Human</label>
           </div>
         </div>
         <div id="watch" className="opponent-choice" onClick={() => props.onClick("AIAI")}>
           <div>
-            <img alt="watch bots" src="/screens/start-screen/watch.svg" />
+            <img src={watch_svg} alt="watch bots" />
             <label>Watch bots</label>
           </div>
         </div>

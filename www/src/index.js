@@ -32,7 +32,7 @@ class GameLoader extends React.Component {
 
       const enable_fight = game_opts.level > 2;
       const hex_grid = game_opts.level !== 1;
-      const bot_moves_first = !game_opts.playerGoesFirst;
+      const bot_moves_first = !game_opts.player_goes_first;
       const duration = 1;
 
       const opts = wasm.Opts.new(enable_fight, hex_grid, bot_moves_first, duration);
@@ -51,8 +51,10 @@ class App extends React.Component {
   constructor(props) {
     super(props);
 
-    // state: 'new' -> 'options collected' -> 'game loader' -> 'wasm loaded' -> 'game shown' -> 'game started' 
-    this.state = { app_state: 'new', game_options: {} };
+    // TODO: move into constants.
+    // App states: 'new' -> 'options collected' -> 'game loader' -> 'wasm loaded' -> 'game shown' -> 'game started'
+    // Another state is 'test_board' for testing the board layout quickly.
+    this.state = { app_state: 'test_board', game_options: {} };
   }
 
   handleOptionsSubmit = (options) => {
@@ -64,6 +66,9 @@ class App extends React.Component {
       return <GameSetup onSubmit={this.handleOptionsSubmit} />;
     } else if (this.state.app_state === 'options_collected') {
       return <GameLoader game_options={this.state.game_options} />;
+    } else if (this.state.app_state === 'test_board') {
+      const default_opts = { level: 2, player_goes_first: true };
+      return <GameLoader game_options={default_opts} />;
     }
   }
 }

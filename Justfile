@@ -6,6 +6,9 @@ wasm:
     @ # `wasm-objdump` is part of WASM binary toolkit: https://github.com/WebAssembly/wabt
     wasm-objdump rokumon_wasm/pkg/*.wasm -x -j export
 
+build_prod: wasm
+    cd www && npm run build
+
 serve: wasm
     cd www && npm install && npm start
 
