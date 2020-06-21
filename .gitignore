@@ -3,4 +3,5 @@ rokumon_console_ui/target
 *.stacks
 history.txt
 www/node_modules
+www/build
 **/.DS_Store
