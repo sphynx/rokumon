@@ -4,7 +4,7 @@
     justify-content: center;
 }
 
-.root > div {
+.root-child {
     flex-shrink: 1;
     min-width: 12rem;
 }
@@ -93,7 +93,7 @@ select {
     flex: 1;
 }
 
-.turn-button:hover {
+.turn-button.selected {
     background-color: #21cebe;
     color: white;
 }

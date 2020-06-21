@@ -19,25 +19,23 @@ class GameLoader extends React.Component {
         playground={this.state.playground}
         bot_moves_first={this.state.bot_moves_first}
       />
-      : <span>Loading wasm...</span>;
+      : <span>Loading WASM...</span>;
   }
 
   componentDidMount() {
-    this.loadWasm();
+    this.loadWasm(this.props.game_options);
   }
 
-  loadWasm = async () => {
+  loadWasm = async (game_opts) => {
     try {
       const wasm = await import('rokumon_wasm');
 
-      // TODO: get those from UI
-      const enable_fight = false;
-      const hex_grid = true;
-      const bot_moves_first = false;
+      const enable_fight = game_opts.level > 2;
+      const hex_grid = game_opts.level !== 1;
+      const bot_moves_first = !game_opts.playerGoesFirst;
       const duration = 1;
 
       const opts = wasm.Opts.new(enable_fight, hex_grid, bot_moves_first, duration);
-
       let playground = wasm.Playground.new(opts);
 
       const game = playground.get_game();
@@ -49,8 +47,30 @@ class GameLoader extends React.Component {
   };
 }
 
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+
+    // state: 'new' -> 'options collected' -> 'game loader' -> 'wasm loaded' -> 'game shown' -> 'game started' 
+    this.state = { app_state: 'new', game_options: {} };
+  }
+
+  handleOptionsSubmit = (options) => {
+    this.setState({ app_state: 'options_collected', game_options: options });
+  }
+
+  render() {
+    if (this.state.app_state === 'new') {
+      return <GameSetup onSubmit={this.handleOptionsSubmit} />;
+    } else if (this.state.app_state === 'options_collected') {
+      return <GameLoader game_options={this.state.game_options} />;
+    }
+  }
+}
+
+
 ReactDOM.render(
-  <GameSetup />,
+  <App />,
   document.getElementById('root')
 );
 
