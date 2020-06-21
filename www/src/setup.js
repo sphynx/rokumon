@@ -47,19 +47,19 @@ function Opponent(props) {
       <div className="opponent">
         <div id="bot_opponent" className="opponent-choice" onClick={() => props.onClick("HumanAI")}>
           <div>
-            <img src="/screens/start-screen/bot.svg" />
+            <img alt="bot" src="/screens/start-screen/bot.svg" />
             <label>Bot</label>
           </div>
         </div>
         <div id="human_opponent" className="opponent-choice" onClick={() => props.onClick("HumanHuman")}>
           <div>
-            <img src="/screens/start-screen/human.svg" />
+            <img alt="human" src="/screens/start-screen/human.svg" />
             <label>Human</label>
           </div>
         </div>
         <div id="watch" className="opponent-choice" onClick={() => props.onClick("AIAI")}>
           <div>
-            <img src="/screens/start-screen/watch.svg" />
+            <img alt="watch bots" src="/screens/start-screen/watch.svg" />
             <label>Watch bots</label>
           </div>
         </div>
@@ -72,9 +72,9 @@ function Level(props) {
   return (
     <div className="option-block">
       <label className="option-label">Select game level:</label>
-      <select onInput={(e) => props.onInput(e)}>
+      <select defaultValue="2" onInput={(e) => props.onInput(e)}>
         <option value="1">Level 1 - Six cards, no Fight, no Surprise</option>
-        <option value="2" selected>Level 2 - Seven cards, no Fight, no Surprise</option>
+        <option value="2">Level 2 - Seven cards, no Fight, no Surprise</option>
         <option value="3">Level 3 - Seven cards, no Surprise</option>
         <option value="4">Level 4 - Seven cards, all moves</option>
         <option value="5">Level 5 - Seven cards with Fort, all moves</option>
