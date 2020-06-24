@@ -171,12 +171,14 @@ export class Game extends React.Component {
     } else if (this.state.selected_die !== null) {
       // Place selected die on this card.
       const move = { 'Place': [this.state.selected_die, coord] };
-      if (this.validateMove(move)) {
+      try {
+        this.validateMove(move);
         this.applyMove(move);
         this.sendMoveToBot(move);
         this.setState({ selected_die: null });
-      } else {
-        alert('invalid place move');
+      } catch (e) {
+        alert(e);
+        this.setState({ selected_card: null, selected_die: null });
       }
     } else if (this.state.selected_card !== null) {
       // Move a die from previously selected card to this one.
@@ -184,12 +186,14 @@ export class Game extends React.Component {
       if (card.dice.length > 0) {
         let die = _.last(card.dice);
         const move = { 'Move': [die, this.state.selected_card, coord] };
-        if (this.validateMove(move)) {
+        try {
+          this.validateMove(move);
           this.applyMove(move);
           this.sendMoveToBot(move);
           this.setState({ selected_die: null, selected_card: null });
-        } else {
-          alert('invalid move move');
+        } catch (e) {
+          alert(e);
+          this.setState({ selected_card: null, selected_die: null });
         }
       }
     } else {

@@ -62,9 +62,11 @@ impl Playground {
         JsValue::from_serde(&mov).unwrap()
     }
 
-    pub fn validate_move(&self, mov_value: &JsValue) -> bool {
+    pub fn validate_move(&self, mov_value: &JsValue) -> Result<(), JsValue> {
         let mov: GameMove<Coord> = mov_value.into_serde().unwrap();
-        self.game.validate_move(&mov).is_ok()
+        self.game
+            .validate_move(&mov)
+            .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
     pub fn send_move(&mut self, mov_value: &JsValue) {
