@@ -119,7 +119,7 @@ select {
 
 /* Submit */
 
-.submit-parent {
+.submit-block {
     display: flex;
     justify-content: center;
     max-width: 320px;
@@ -135,6 +135,10 @@ select {
     width: 100px;
     border-radius: 5px;
     background-color: #6c5fac;
+}
+
+.submit-link {
+    text-decoration: none;
     color: white;
     font-size: 2rem;
     font-weight: 500;

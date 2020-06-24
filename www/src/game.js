@@ -36,6 +36,7 @@ function Die(props) {
     <img
       src={dieImage(props.color, props.value)}
       onClick={props.onClick}
+      alt={`${props.color} die with value ${props.value}`}
       className={`die ${selected_clz}`}
     />
   );
@@ -47,6 +48,7 @@ function DieOnCard(props) {
     <img
       src={dieImage(props.color, props.value)}
       onClick={props.onClick}
+      alt={`${props.color} die with value ${props.value}`}
       className={`die ${selected_clz}`}
     />
   );

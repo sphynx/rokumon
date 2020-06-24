@@ -1,7 +1,7 @@
 import './setup.css';
 
 import React from 'react';
-import _ from 'lodash';
+import { Link } from 'react-router-dom';
 
 import bot_svg from './img/bot.svg';
 import human_svg from './img/human.svg';
@@ -12,7 +12,7 @@ export class GameSetup extends React.Component {
     super(props);
 
     this.state = {
-      opponents: "HumanAI",
+      opponents: 'bot',
       level: 2,
       player_goes_first: true,
     };
@@ -30,6 +30,11 @@ export class GameSetup extends React.Component {
     this.setState({ level: parseInt(e.target.value, 10) });
   }
 
+  prepareUrl() {
+    const turn = this.state.player_goes_first ? "first" : "second";
+    return `/game/${this.state.opponents}/${this.state.level}/${turn}`;
+  }
+
   render() {
     return (
       <div className="root">
@@ -37,7 +42,7 @@ export class GameSetup extends React.Component {
           <Opponent onClick={this.handleOpponentChange} />
           <Level onInput={this.handleLevelChange} />
           <Turn onClick={this.handleTurnChange} playerGoesFirst={this.state.player_goes_first} />
-          <Submit onClick={() => this.props.onSubmit(_.cloneDeep(this.state))} />
+          <Submit url={this.prepareUrl()} />
         </div>
       </div >
     );
@@ -49,19 +54,19 @@ function Opponent(props) {
     <div className="option-block">
       <label className="option-label">Pick your opponent:</label>
       <div className="opponent">
-        <div id="bot_opponent" className="opponent-choice" onClick={() => props.onClick("HumanAI")}>
+        <div id="bot_opponent" className="opponent-choice" onClick={() => props.onClick("bot")}>
           <div>
             <img src={bot_svg} alt="bot" />
             <label>Bot</label>
           </div>
         </div>
-        <div id="human_opponent" className="opponent-choice" onClick={() => props.onClick("HumanHuman")}>
+        <div id="human_opponent" className="opponent-choice" onClick={() => props.onClick("human")}>
           <div>
             <img src={human_svg} alt="human" />
             <label>Human</label>
           </div>
         </div>
-        <div id="watch" className="opponent-choice" onClick={() => props.onClick("AIAI")}>
+        <div id="watch" className="opponent-choice" onClick={() => props.onClick("watch")}>
           <div>
             <img src={watch_svg} alt="watch bots" />
             <label>Watch bots</label>
@@ -111,9 +116,9 @@ function Turn(props) {
 
 function Submit(props) {
   return (
-    <div className="submit-parent">
-      <div className="submit-btn" onClick={props.onClick}>
-        <span>Go!</span>
+    <div className="submit-block">
+      <div className="submit-btn">
+        <Link to={props.url} className="submit-link">Go!</Link>
       </div>
     </div>
   );
