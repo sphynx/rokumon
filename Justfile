@@ -2,7 +2,7 @@ build:
     cargo build --release
 
 wasm:
-    wasm-pack build rokumon_wasm
+    wasm-pack build --release rokumon_wasm
     @ # `wasm-objdump` is part of WASM binary toolkit: https://github.com/WebAssembly/wabt
     wasm-objdump rokumon_wasm/pkg/*.wasm -x -j export
 
