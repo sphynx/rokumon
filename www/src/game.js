@@ -324,7 +324,7 @@ export class Game extends React.Component {
   componentDidUpdate(prevProps, prevState) {
     if (this.state.history.length > prevState.history.length) {
       if (this.botToMove()) {
-        setTimeout(() => this.getMoveFromBot(), 10);
+        setTimeout(() => this.getMoveFromBot(), 20);
       }
     }
   }
