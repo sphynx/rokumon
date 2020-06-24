@@ -252,13 +252,24 @@ impl Game {
                 Ok(())
             }
             Move(die, from, to) => {
-                // 1. the `die` is on the card `from` and is not covered.
-                // 2. card `to` is different kind to card `from`
-                // 3. if card `to` has two dice they must be of current players' color
+                // - the `die` is on the card `from` is not covered.
+                // - the `die` has to belong to the current player
+                // - card `to` is different kind to card `from`
+                // - if card `to` has two dice they must be of current players' color
                 match (self.board.card_at(from), self.board.card_at(to)) {
                     (Some(card), Some(target_card)) => {
-                        let not_covered = card.top_die().map(|d| *d == *die).unwrap_or(true);
+                        ensure!(!card.dice.is_empty(), "move: there should be your die at `from` card");
+
+                        let top_die = card.top_die().unwrap();
+
+                        let not_covered = top_die == die;
                         ensure!(not_covered, "move: the dice to be moved should not be covered");
+
+                        let belongs_to_current_player = die.belongs_to_player1() == self.player1_moves;
+                        ensure!(
+                            belongs_to_current_player,
+                            "move: the die to move should belong to current player"
+                        );
 
                         ensure!(
                             card.kind != target_card.kind,
@@ -867,10 +878,24 @@ mod test {
     }
 
     macro_rules! apply_moves {
-        ($game:ident, $($m:expr),+) => {
+        ($game:ident, $($m:expr),+ $(,)?) => {
             $(
                 $game.apply_user_move($m)?;
             )+
+        };
+    }
+
+    macro_rules! validate {
+        ($game:ident, $m:expr) => {
+            let conv_move = $game.convert_move_coords($m)?;
+            $game.validate_move(&conv_move)?;
+        };
+    }
+
+    macro_rules! should_fail {
+        ($game:ident, $m:expr) => {
+            let conv_move = $game.convert_move_coords($m)?;
+            assert!($game.validate_move(&conv_move).is_err());
         };
     }
 
@@ -958,6 +983,47 @@ mod test {
 
         // Can't start from empty spot.
         assert!(game.validate_move(&Surprise(c(3, 3), c(0, 1))).is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_validity_of_move() -> Fallible<()> {
+        let layout = Layout::Bricks7;
+        let deck = Deck::ordered("gggjjjj")?;
+
+        let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
+        apply_moves!(game, place!(r, 2 => 1, 1), place!(b, 1 => 2, 1));
+
+        // Positive test cases.
+        validate!(game, mov!(r, 2 => 1, 1 => 2, 1));
+        validate!(game, mov!(r, 2 => 1, 1 => 2, 2));
+        validate!(game, mov!(r, 2 => 1, 1 => 2, 3));
+        validate!(game, mov!(r, 2 => 1, 1 => 2, 4));
+
+        // Can't move opponents dice.
+        should_fail!(game, mov!(b, 1 => 2, 1 => 1, 3));
+
+        // Can't move to the same card kind.
+        should_fail!(game, mov!(r, 2 => 1, 1 => 1, 2));
+        should_fail!(game, mov!(r, 2 => 1, 1 => 1, 3));
+
+        // No dice present on the `from` card.
+        should_fail!(game, mov!(r, 2 => 1, 2 => 2, 1));
+
+        // Wrong die.
+        should_fail!(game, mov!(r, 1 => 1, 1 => 2, 1));
+
+        let mut game = Game::new(layout.clone(), deck.clone(), Default::default());
+        apply_moves!(
+            game,
+            place!(r, 2 => 1, 1),
+            place!(b, 1 => 2, 1),
+            mov!(r, 2 => 1, 1 => 2, 1)
+        );
+
+        // Die shouldn't be covered.
+        should_fail!(game, mov!(b, 1 => 2, 1 => 1, 2));
 
         Ok(())
     }
