@@ -56,7 +56,7 @@ function DieOnCard(props) {
 
 function DiceStock(props) {
   return (
-    <div className="dice-stock">
+    <div className={`dice-stock ${props.className}`}>
       {props.dice.map((d, ix) =>
         <Die
           key={ix}
@@ -70,27 +70,36 @@ function DiceStock(props) {
   );
 }
 
-class Board extends React.Component {
-  render() {
-    return (
-      <div className="card-board">
-        {this.props.cards.map((coord_card, ix) => {
+function Board(props) {
+  const styles = {
+    // Hex:       4 x card_width + 3 * horiz_gap
+    // Rectangle: 3 x card_width + 2 * horiz_gap
+
+    // We have to specify this manually in JS, since there is
+    // no easy way to calculate the size taken by absolutely positioned elements
+    // (cards).
+    "min-width": props.grid === "Hex" ? "315px" : "235px",
+  };
+  return (
+    <div className="card-board" style={styles}>
+      {
+        props.cards.map((coord_card, ix) => {
           const [coord, card] = coord_card;
           return (<Card
             key={ix}
             ix={ix}
             coord={coord}
-            grid={this.props.grid}
+            grid={props.grid}
             kind={card.kind}
             dice={card.dice}
-            selected={coord === this.props.selectedCard}
-            onClick={() => this.props.onClick(coord)}
+            selected={coord === props.selectedCard}
+            onClick={() => props.onClick(coord)}
           />);
         }
-        )}
-      </div>
-    );
-  }
+        )
+      }
+    </div>
+  );
 }
 
 function History(props) {
@@ -299,6 +308,7 @@ export class Game extends React.Component {
           dice={this.state.player2.dice}
           selectedDie={this.state.selected_die}
           onClick={(die) => this.handleDieClick(die)}
+          className="top"
         />
         <Board
           cards={this.state.board.cards}
@@ -310,6 +320,7 @@ export class Game extends React.Component {
           dice={this.state.player1.dice}
           selectedDie={this.state.selected_die}
           onClick={(die) => this.handleDieClick(die)}
+          className="bottom"
         />
         <GameInfo
           whoMoves={who_moves}
@@ -364,13 +375,13 @@ function coordToPosition(grid, coord) {
   const card_width = 75;
   const card_height = 110;
   const horizontal_gap = 5; // px
-  const vertical_gap = 4; // px
+  const vertical_gap = 5; // px
 
   const size_x = card_width + horizontal_gap;
   const size_y = card_height + vertical_gap;
 
   const shift_x = 0;
-  const shift_y = card_height;
+  const shift_y = size_y;
 
   if (grid === "Hex") {
     return {

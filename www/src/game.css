@@ -8,7 +8,6 @@
 
 .card-board {
   height: 230px;
-  min-width: 325px;
   position: relative;
 }
 
@@ -17,12 +16,8 @@
 .card {
   width: 75px;
   height: 110px;
-  border: 0px;
-  margin-top: 10px;
-  margin-left: 5px;
   border-radius: 5px;
   position: absolute;
-  box-sizing: border-box;
 }
 
 .card.selected {
@@ -39,26 +34,26 @@
 
 /* Dice stock */
 
-.dice-stock {
-  margin-top: 30px;
+.dice-stock.top {
+  margin-top: 0px;
   margin-bottom: 30px;
+}
+
+.dice-stock.bottom {
+  margin-top: 30px;
+  margin-bottom: 100px;
 }
 
 .die {
   margin-right: 10px;
 }
 
+.dice-stock > img:last-child {
+  margin-right: 0;
+}
+
 .die.selected {
   transform: scale(1.2);
-}
-
-.die-on-card {
-  margin-right: 10px;
-  font-size: 40px;
-}
-
-.selected-die-on-card {
-  background-color: burlywood;
 }
 
 /* Extra info */
@@ -68,5 +63,5 @@
 }
 
 .history {
-  margin-top: 50px;
+  margin-top: 0px;
 }
