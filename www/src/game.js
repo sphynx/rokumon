@@ -165,7 +165,7 @@ export class Game extends React.Component {
   }
 
   botToMove() {
-    return (this.state.player1_moves === this.props.bot_moves_first);
+    return this.state.player1_moves === this.props.bot_moves_first;
   }
 
   getCardAtCoord(board, target_coord) {
@@ -178,7 +178,14 @@ export class Game extends React.Component {
   }
 
   handleDieClick(die) {
-    this.setState((state, props) => ({ selected_die: state.selected_die === die ? null : die, selected_card: null }));
+    this.setState((state, props) => {
+      // Can only select our own dice.
+      if (state.player1_moves === dieBelongsToPlayer1(die)) {
+        return { selected_die: state.selected_die === die ? null : die, selected_card: null };
+      } else {
+        return {};
+      }
+    });
   }
 
   handleCardClick(coord) {
@@ -188,34 +195,30 @@ export class Game extends React.Component {
     } else if (this.state.selected_die !== null) {
       // Place selected die on this card.
       const move = { 'Place': [this.state.selected_die, coord] };
-      try {
-        this.validateMove(move);
-        this.applyMove(move);
-        this.sendMoveToBot(move);
-        this.setState({ selected_die: null });
-      } catch (e) {
-        alert(e);
-        this.setState({ selected_card: null, selected_die: null });
-      }
+      this.handleMove(move);
     } else if (this.state.selected_card !== null) {
       // Move a die from previously selected card to this one.
       const card = this.getCardAtCoord(this.state.board, this.state.selected_card);
       if (card.dice.length > 0) {
         let die = _.last(card.dice);
         const move = { 'Move': [die, this.state.selected_card, coord] };
-        try {
-          this.validateMove(move);
-          this.applyMove(move);
-          this.sendMoveToBot(move);
-          this.setState({ selected_die: null, selected_card: null });
-        } catch (e) {
-          alert(e);
-          this.setState({ selected_card: null, selected_die: null });
-        }
+        this.handleMove(move);
       }
     } else {
       // Select first card.
       this.setState({ selected_die: null, selected_card: coord });
+    }
+  }
+
+  handleMove(move) {
+    try {
+      this.validateMove(move);
+      this.applyMove(move);
+      this.sendMoveToBot(move);
+      this.setState({ selected_die: null, selected_card: null });
+    } catch (e) {
+      alert(e);
+      this.setState({ selected_card: null, selected_die: null });
     }
   }
 
@@ -402,6 +405,10 @@ function coordToPosition(grid, coord) {
       y: shift_y + size_y * coord.y
     }
   }
+}
+
+function dieBelongsToPlayer1(die) {
+  return die.color === 'Red';
 }
 
 function dieImage(color, value) {
