@@ -156,6 +156,14 @@ export class Game extends React.Component {
     }
   }
 
+  you() {
+    return this.props.bot_moves_first ? this.state.player2 : this.state.player1;
+  }
+
+  bot() {
+    return this.props.bot_moves_first ? this.state.player1 : this.state.player2;
+  }
+
   botToMove() {
     return (this.state.player1_moves === this.props.bot_moves_first);
   }
@@ -305,7 +313,7 @@ export class Game extends React.Component {
     return (
       <div className="game">
         <DiceStock
-          dice={this.state.player2.dice}
+          dice={this.bot().dice}
           selectedDie={this.state.selected_die}
           onClick={(die) => this.handleDieClick(die)}
           className="top"
@@ -317,7 +325,7 @@ export class Game extends React.Component {
           onClick={(coord) => this.handleCardClick(coord)}
         />
         <DiceStock
-          dice={this.state.player1.dice}
+          dice={this.you().dice}
           selectedDie={this.state.selected_die}
           onClick={(die) => this.handleDieClick(die)}
           className="bottom"
