@@ -178,7 +178,7 @@ export class Game extends React.Component {
   }
 
   handleDieClick(die) {
-    this.setState({ selected_die: die, selected_card: null });
+    this.setState((state, props) => ({ selected_die: state.selected_die === die ? null : die, selected_card: null }));
   }
 
   handleCardClick(coord) {
