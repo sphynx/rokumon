@@ -2,11 +2,11 @@
 
 An AI, web interface and a console application for playing [Rokumon game](https://boardgamegeek.com/thread/2380440/wip-rokumon-2020-9-card-design-contest-contest-rea) by Charles Ward.
 
-The AI is written in Rust and compiled to WebAssembly to be used in the web interface (which is written in JavaScript using React). This allows to run a reasonably strong computer opponent right in your browser (and it even works on smartphones and other mobile devices).
-
-Rokumon is a nice little game with simple rules and interesting gameplay. It can be played with just seven ordinary playing cards and a handful of dice of two colors. So, if you have this very easy to find "equipment", you can easily try it with friends.
+Rokumon is a nice little game with simple rules and interesting gameplay. It can be played with just seven ordinary playing cards and a handful of dice of two colors. So, if you have this very easy to find "equipment", you can easily try it with friends. Note that Rokumon has recently won a "Nine cards" [game design competition](https://boardgamegeek.com/thread/2339779/article/35142275#35142275) on BGG, congrats to Charles!
 
 Also, if you don't have a worthy opponent, you can always play against my bot! :)
+
+The AI is written in Rust and compiled to WebAssembly to be used in the web interface (which is written in JavaScript using React). This allows to run a reasonably strong computer opponent right in your browser (and it even works on smartphones and other mobile devices).
 
 # Game setup screen
 
