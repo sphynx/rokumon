@@ -10,11 +10,11 @@ Also, if you don't have a worthy opponent, you can always play against my bot! :
 
 # Game setup screen
 
-![game-setup-screen](misc/screenshots/game-setup.png)
+<img src="misc/screenshots/game-setup.png" width="250">
 
 # Game play screen
 
-![game-screen](misc/screenshots/game.png)
+<img src="misc/screenshots/game.png" width="250">
 
 Rules of the game can be found in this repository in [misc/docs/rules.pdf](misc/docs/rules.pdf)
 
