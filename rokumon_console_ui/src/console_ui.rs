@@ -1,13 +1,13 @@
-use crate::parsers;
-use rokumon::ai::AlphaBetaAI;
-use rokumon::coord::Coord;
-use rokumon::game::{Game, GameMove};
-use rokumon::play::Strategy;
-
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
-
 use std::process::exit;
+
+use crate::parsers;
+
+use rokumon_core::ai::AlphaBetaAI;
+use rokumon_core::coord::Coord;
+use rokumon_core::game::{Game, GameMove};
+use rokumon_core::play::Strategy;
 
 pub struct Human;
 

@@ -1,7 +1,7 @@
 use rayon::prelude::*;
 
-use rokumon::coord::Coord;
-use rokumon::game::{Game, GameMove};
+use rokumon_core::coord::Coord;
+use rokumon_core::game::{Game, GameMove};
 
 /// This perft uses a clone of the game every time it explores a new
 /// move. Hence it makes a lot of allocations and uses a lot of

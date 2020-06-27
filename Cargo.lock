@@ -667,7 +667,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26412eb97c6b088a6997e05f69403a802a92d520de2f8e63c2b65f9e0f47c4e8"
 
 [[package]]
-name = "rokumon"
+name = "rokumon_console_ui"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "failure",
+ "nom",
+ "rayon",
+ "rokumon_core",
+ "rustyline",
+ "structopt",
+]
+
+[[package]]
+name = "rokumon_core"
 version = "0.1.0"
 dependencies = [
  "cfg-if",
@@ -681,24 +694,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "rokumon_console_ui"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "failure",
- "nom",
- "rayon",
- "rokumon",
- "rustyline",
- "structopt",
-]
-
-[[package]]
 name = "rokumon_wasm"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
- "rokumon",
+ "rokumon_core",
  "wasm-bindgen",
 ]
 

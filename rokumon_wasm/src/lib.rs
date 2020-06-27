@@ -2,12 +2,12 @@ mod utils;
 
 use wasm_bindgen::prelude::*;
 
-use rokumon::ai::AlphaBetaAI;
-use rokumon::board::Layout;
-use rokumon::card::Deck;
-use rokumon::coord::Coord;
-use rokumon::game::{Game, GameMove, Rules};
-use rokumon::play::Strategy;
+use rokumon_core::ai::AlphaBetaAI;
+use rokumon_core::board::Layout;
+use rokumon_core::card::Deck;
+use rokumon_core::coord::Coord;
+use rokumon_core::game::{Game, GameMove, Rules};
+use rokumon_core::play::Strategy;
 
 #[wasm_bindgen]
 pub struct Opts {

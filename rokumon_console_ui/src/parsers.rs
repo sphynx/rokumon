@@ -20,9 +20,9 @@ use nom::sequence::{delimited, pair, terminated, tuple};
 use nom::IResult;
 use nom::{do_parse, tag_no_case};
 
-use rokumon::card::{DiceColor, Die};
-use rokumon::coord::{Coord, UserCoord};
-use rokumon::game::GameMove;
+use rokumon_core::card::{DiceColor, Die};
+use rokumon_core::coord::{Coord, UserCoord};
+use rokumon_core::game::GameMove;
 
 fn unsigned(i: &str) -> IResult<&str, i8> {
     map_res(digit1, |s: &str| s.parse())(i)

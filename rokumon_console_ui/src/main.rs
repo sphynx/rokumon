@@ -9,11 +9,11 @@ use std::time::Instant;
 use failure::{bail, Fallible};
 use structopt::StructOpt;
 
-use rokumon::ai::AlphaBetaAI;
-use rokumon::board::Layout;
-use rokumon::card::Deck;
-use rokumon::game::{Game, Rules};
-use rokumon::play::{self, RandomAI};
+use rokumon_core::ai::AlphaBetaAI;
+use rokumon_core::board::Layout;
+use rokumon_core::card::Deck;
+use rokumon_core::game::{Game, Rules};
+use rokumon_core::play::{self, RandomAI};
 
 use console_ui::Human;
 use perft::{parallel_perft, perft};
