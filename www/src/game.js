@@ -203,6 +203,8 @@ export class Game extends React.Component {
         let die = _.last(card.dice);
         const move = { 'Move': [die, this.state.selected_card, coord] };
         this.handleMove(move);
+      } else {
+        this.setState({ selected_card: null });
       }
     } else {
       // Select first card.
