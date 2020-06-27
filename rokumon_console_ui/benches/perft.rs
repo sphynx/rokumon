@@ -1,8 +1,8 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use rokumon::board::Layout;
-use rokumon::card::Deck;
-use rokumon::game::{Game, Rules};
+use rokumon_core::board::Layout;
+use rokumon_core::card::Deck;
+use rokumon_core::game::{Game, Rules};
 use rokumon_console_ui::perft::perft;
 
 pub fn start_pos(c: &mut Criterion) {

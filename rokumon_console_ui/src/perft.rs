@@ -46,9 +46,9 @@ pub fn perft(game: &mut Game, depth: usize) -> usize {
 mod test {
     use super::*;
 
-    use rokumon::board::Layout;
-    use rokumon::card::Deck;
-    use rokumon::game::{Game, Rules};
+    use rokumon_core::board::Layout;
+    use rokumon_core::card::Deck;
+    use rokumon_core::game::{Game, Rules};
 
     #[test]
     pub fn test_perft() -> failure::Fallible<()> {
