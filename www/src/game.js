@@ -78,7 +78,7 @@ function Board(props) {
     // We have to specify this manually in JS, since there is
     // no easy way to calculate the size taken by absolutely positioned elements
     // (cards).
-    "min-width": props.grid === "Hex" ? "315px" : "235px",
+    "minWidth": props.grid === "Hex" ? "315px" : "235px",
   };
   return (
     <div className="card-board" style={styles}>
@@ -130,6 +130,12 @@ function GameInfo(props) {
   );
 }
 
+const game_result = {
+  IN_PROGRESS: "In progress",
+  YOU_WON: "You won",
+  BOT_WON: "Bot won",
+}
+
 export class Game extends React.Component {
   constructor(props) {
     super(props);
@@ -165,7 +171,7 @@ export class Game extends React.Component {
   }
 
   botToMove() {
-    return this.state.player1_moves === this.props.bot_moves_first;
+    return (this.state.player1_moves === this.props.bot_moves_first) && this.isGameInProgress();
   }
 
   getCardAtCoord(board, target_coord) {
@@ -217,6 +223,7 @@ export class Game extends React.Component {
       this.validateMove(move);
       this.applyMove(move);
       this.sendMoveToBot(move);
+      this.checkGameResult();
       this.setState({ selected_die: null, selected_card: null });
     } catch (e) {
       alert(e);
@@ -224,8 +231,33 @@ export class Game extends React.Component {
     }
   }
 
-  validateMove(move) {
-    return this.props.playground.validate_move(move);
+  applyMove(move) {
+    const history = this.state.history.concat([move]);
+    for (var kind in move) {
+      switch (kind) {
+        case 'Place': {
+          const what = move[kind][0];
+          const where = move[kind][1];
+          this.setState((state, props) => {
+            return this.applyPlaceMove(state, what, where, history)
+          });
+          break;
+        };
+
+        case 'Move': {
+          const what = move[kind][0];
+          const from = move[kind][1];
+          const to = move[kind][2];
+          this.setState((state, props) => {
+            return this.applyMoveMove(state, what, from, to, history)
+          });
+          break;
+        };
+
+        default:
+          break;
+      }
+    }
   }
 
   applyPlaceMove(state, what, where, history) {
@@ -271,42 +303,49 @@ export class Game extends React.Component {
     };
   };
 
-  applyMove(move) {
-    const history = this.state.history.concat([move]);
-    for (var kind in move) {
-      switch (kind) {
-        case 'Place': {
-          const what = move[kind][0];
-          const where = move[kind][1];
-          this.setState((state, props) => {
-            return this.applyPlaceMove(state, what, where, history)
-          });
-          break;
-        };
-
-        case 'Move': {
-          const what = move[kind][0];
-          const from = move[kind][1];
-          const to = move[kind][2];
-          this.setState((state, props) => {
-            return this.applyMoveMove(state, what, from, to, history)
-          });
-          break;
-        };
-
-        default:
-          break;
-      }
-    }
-  }
-
   getMoveFromBot() {
     const move = this.props.playground.get_move();
     this.applyMove(move);
+    this.checkGameResult();
   }
 
   sendMoveToBot(move) {
     this.props.playground.send_move(move);
+  }
+
+  validateMove(move) {
+    if (this.isGameInProgress()) {
+      return this.props.playground.validate_move(move);
+    } else {
+      throw new Error(
+        "The game is finished. Use 'Back' button to go back to the start screen."
+      );
+    }
+  }
+
+  getGameResult() {
+    const game = this.props.playground.get_game();
+
+    if (game.result === "FirstPlayerWon") {
+      return this.props.bot_moves_first ? game_result.BOT_WON : game_result.YOU_WON;
+    } else if (game.result === "SecondPlayerWon") {
+      return this.props.bot_moves_first ? game_result.YOU_WON : game_result.BOT_WON;
+    } else {
+      return game_result.IN_PROGRESS;
+    }
+  }
+
+  isGameInProgress() {
+    return this.getGameResult() === game_result.IN_PROGRESS;
+  }
+
+  checkGameResult() {
+    const status = this.getGameResult();
+    if (status === game_result.YOU_WON) {
+      alert('Congratulations, you won!');
+    } else if (status === game_result.BOT_WON) {
+      alert('The bot won this game.');
+    }
   }
 
   render() {
