@@ -35,6 +35,8 @@ pub struct Playground {
     game: Game,
 }
 
+// TODO: handle errors better by changing return types to Result<T, JSValue> and automating conversion
+// of errors to JSValue (instead of just calling JsValue::from_str(&e.to_string())) all the time.
 #[wasm_bindgen]
 impl Playground {
     pub fn new(opts: Opts) -> Self {
@@ -58,19 +60,18 @@ impl Playground {
 
     pub fn get_move(&mut self) -> JsValue {
         let mov = self.ai.get_move(&self.game);
-        self.game.apply_move(&mov).unwrap();
-        JsValue::from_serde(&mov).unwrap()
+        self.game.apply_move(&mov).expect("get_move: Can't apply AI's move");
+        JsValue::from_serde(&mov).expect("get_move: Serde serialization failed")
     }
 
     pub fn validate_move(&self, mov_value: &JsValue) -> Result<(), JsValue> {
-        let mov: GameMove<Coord> = mov_value.into_serde().unwrap();
+        let mov: GameMove<Coord> = mov_value.into_serde().map_err(|e| JsValue::from_str(&e.to_string()))?;
         self.game
             .validate_move(&mov)
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
     pub fn send_move(&mut self, mov_value: &JsValue) {
-        // FIXME: learn how to properly handle errors in WASM
         let mov: GameMove<Coord> = mov_value.into_serde().unwrap();
         self.game.apply_move(&mov).unwrap();
     }

@@ -163,7 +163,10 @@ impl Strategy for AlphaBetaAI {
                     self.bot.detailed_select(&game, $condition).unwrap()
                 } else {
                     let mut logger = rubot::Logger::new($condition);
-                    let action = self.bot.detailed_select(&game, &mut logger).unwrap();
+                    let action = self
+                        .bot
+                        .detailed_select(&game, &mut logger)
+                        .expect("Bot returned no moves");
                     println!(
                         "AI log: steps: {}, depth: {}, completed: {}, duration: {:?}",
                         logger.steps(),
@@ -192,41 +195,24 @@ impl Strategy for AlphaBetaAI {
             };
         }
 
-        match game.ply_to_be_played() {
-            // 0 => {
-            //     // We are just starting, let's play a random `place`
-            //     // in better squares.
-            //     let coord = game
-            //         .board
-            //         .coords_iter()
-            //         .map(|coord| (*coord, game.board.num_of_adjacent_triples(*coord)))
-            //         .max_by_key(|(_coord, n)| *n)
-            //         .unwrap();
-
-            //     return GameMove::Place(Die::new(DiceColor::Red, 2), coord.0);
-            // }
-            _ => {
-                // Now just run alpha-beta.
-                if self.duration != 0 {
-                    cfg_if! {
-                        if #[cfg(feature = "for_wasm")] {
-                            let web_duration = web_duration::WebDuration(Duration::from_secs(self.duration));
-                            run_ai_until!(web_duration);
-                        } else {
-                            let duration = Duration::from_secs(self.duration);
-                            println!("Running AI with duration {:?}...", &duration);
-                            run_ai_until!(duration);
-                        }
-                    }
-                } else if self.depth != 0 {
-                    let depth = Depth(self.depth);
-                    println!("Running AI with depth {:?}...", &depth);
-                    run_ai_until!(depth);
+        if self.duration != 0 {
+            cfg_if! {
+                if #[cfg(feature = "for_wasm")] {
+                    let web_duration = web_duration::WebDuration(Duration::from_secs(self.duration));
+                    run_ai_until!(web_duration);
                 } else {
-                    println!("Running AI until completion...");
-                    run_ai_until!(ToCompletion);
+                    let duration = Duration::from_secs(self.duration);
+                    println!("Running AI with duration {:?}...", &duration);
+                    run_ai_until!(duration);
                 }
             }
+        } else if self.depth != 0 {
+            let depth = Depth(self.depth);
+            println!("Running AI with depth {:?}...", &depth);
+            run_ai_until!(depth);
+        } else {
+            println!("Running AI until completion...");
+            run_ai_until!(ToCompletion);
         }
     }
 }
