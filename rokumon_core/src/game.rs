@@ -231,22 +231,19 @@ impl Game {
 
         ensure!(
             self.result == GameResult::InProgress,
-            "can't apply move to finished game: {:?}",
-            self
+            "can't apply move to finished game",
         );
 
         match game_move {
             Place(die, coord) => {
                 ensure!(
                     self.current_player().dice.contains(die),
-                    "place: player doesn't have this die: {}",
-                    die
+                    "place: you should own the die to place it",
                 );
 
                 ensure!(
                     self.board.has_empty_card_at(coord),
-                    "place: target card should be empty: {}",
-                    coord
+                    "place: the target card for place should be empty",
                 );
 
                 Ok(())
@@ -258,22 +255,22 @@ impl Game {
                 // - if card `to` has two dice they must be of current players' color
                 match (self.board.card_at(from), self.board.card_at(to)) {
                     (Some(card), Some(target_card)) => {
-                        ensure!(!card.dice.is_empty(), "move: there should be your die at `from` card");
+                        ensure!(
+                            !card.dice.is_empty(),
+                            "move: you should have a die at the card you are moving from"
+                        );
 
                         let top_die = card.top_die().unwrap();
 
                         let not_covered = top_die == die;
-                        ensure!(not_covered, "move: the dice to be moved should not be covered");
+                        ensure!(not_covered, "move: the die to be moved should not be covered");
 
                         let belongs_to_current_player = die.belongs_to_player1() == self.player1_moves;
-                        ensure!(
-                            belongs_to_current_player,
-                            "move: the die to move should belong to current player"
-                        );
+                        ensure!(belongs_to_current_player, "move: you should own the die to be moved");
 
                         ensure!(
                             card.kind != target_card.kind,
-                            "move: `from` and `to` cards should be of different kinds, but they are both {:?}",
+                            "move: two cards used for move should be of different kinds, but they are both {:?}",
                             card.kind
                         );
 
@@ -282,7 +279,10 @@ impl Game {
                                 .dice
                                 .iter()
                                 .all(|d| d.belongs_to_player1() == self.player1_moves);
-                        ensure!(covers_stack_ok, "move: can only cover one die or two of your own dice");
+                        ensure!(
+                            covers_stack_ok,
+                            "move: you can only cover a single die or two of your own dice"
+                        );
 
                         Ok(())
                     }
@@ -297,14 +297,10 @@ impl Game {
                 match self.board.card_at(coord) {
                     Some(card) => {
                         let num_of_dice = card.dice.len();
-                        ensure!(
-                            num_of_dice == 2,
-                            "fight: can only fight at a card with two dice, but have: {}",
-                            num_of_dice
-                        );
+                        ensure!(num_of_dice == 2, "fight: can only fight at a card with two dice");
 
                         let at_least_one_yours = card.dice.iter().any(|d| d.belongs_to_player1() == self.player1_moves);
-                        ensure!(at_least_one_yours, "fight: at least once die should be yours");
+                        ensure!(at_least_one_yours, "fight: at least one die should be yours");
 
                         Ok(())
                     }
