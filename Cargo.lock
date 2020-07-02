@@ -704,8 +704,9 @@ dependencies = [
 
 [[package]]
 name = "rubot"
-version = "0.2.0"
-source = "git+https://github.com/lcnr/rubot#181ea63175d1f0449917dea476b4db44c2ec72f7"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4728b373f62a5dde4ad36b88f8cc96f4bb3dd391d48a760542f8338ee34bc15d"
 dependencies = [
  "tapir",
 ]

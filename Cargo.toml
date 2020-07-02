@@ -1,8 +1,5 @@
 [workspace]
 members = ["rokumon_core", "rokumon_console_ui", "rokumon_wasm"]
 
-[patch.crates-io]
-rubot = { git = "https://github.com/lcnr/rubot" }
-
 [profile.release]
 debug = true

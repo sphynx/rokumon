@@ -16,7 +16,7 @@ for_wasm = ["rand/wasm-bindgen", "web-sys"]
 rand = "0.7"
 itertools = "0.9"
 failure = "0.1"
-rubot = "0.2"
+rubot = "0.3"
 cfg-if = "0.1"
 
 serde = { version = "1.0", features = ["derive"], optional = true }
