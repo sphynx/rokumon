@@ -130,6 +130,16 @@ function GameInfo(props) {
   );
 }
 
+function Fight(props) {
+  return props.isOn ?
+    (
+      <button type="button" className="fight" onClick={props.onClick}>
+        Fight
+      </button>
+    )
+    : null;
+}
+
 const game_result = {
   IN_PROGRESS: "In progress",
   YOU_WON: "You won",
@@ -168,6 +178,22 @@ export class Game extends React.Component {
 
   bot() {
     return this.props.bot_moves_first ? this.state.player1 : this.state.player2;
+  }
+
+  canFight() {
+    if (this.state.selected_card) {
+      let card = this.getCardAtCoord(this.state.board, this.state.selected_card);
+      if (card.dice.length == 2) {
+        const first_owner = dieBelongsToPlayer1(card.dice[0]);
+        const second_owner = dieBelongsToPlayer1(card.dice[1]);
+        return (this.state.player1_moves === first_owner)
+          || (this.state.player1_moves === second_owner);
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
 
   botToMove() {
@@ -218,6 +244,13 @@ export class Game extends React.Component {
     }
   }
 
+  handleFightClick() {
+    if (this.state.selected_card) {
+      const move = { 'Fight': this.state.selected_card };
+      this.handleMove(move);
+    }
+  }
+
   handleMove(move) {
     try {
       this.validateMove(move);
@@ -238,7 +271,7 @@ export class Game extends React.Component {
         case 'Place': {
           const what = move[kind][0];
           const where = move[kind][1];
-          this.setState((state, props) => {
+          this.setState((state) => {
             return this.applyPlaceMove(state, what, where, history)
           });
           break;
@@ -248,11 +281,19 @@ export class Game extends React.Component {
           const what = move[kind][0];
           const from = move[kind][1];
           const to = move[kind][2];
-          this.setState((state, props) => {
+          this.setState((state) => {
             return this.applyMoveMove(state, what, from, to, history)
           });
           break;
         };
+
+        case 'Fight': {
+          const where = move[kind];
+          this.setState((state) => {
+            return this.applyFightMove(state, where, history)
+          });
+          break;
+        }
 
         default:
           break;
@@ -299,9 +340,34 @@ export class Game extends React.Component {
     return {
       board: board_copy,
       player1_moves: !state.player1_moves,
-      history
+      history,
     };
   };
+
+  applyFightMove(state, where, history) {
+    let board_copy = _.cloneDeep(state.board);
+    let player1_copy = _.cloneDeep(state.player1);
+    let player2_copy = _.cloneDeep(state.player2);
+
+    let card = this.getCardAtCoord(board_copy, where);
+    const loser = firstIsLoser(card.dice[0], card.dice[1]) ? card.dice[0] : card.dice[1];
+
+    this.deleteDie(card.dice, loser);
+
+    if (dieBelongsToPlayer1(loser)) {
+      player1_copy.dice.push(loser);
+    } else {
+      player2_copy.dice.push(loser);
+    }
+
+    return {
+      board: board_copy,
+      player1: player1_copy,
+      player2: player2_copy,
+      player1_moves: !state.player1_moves,
+      history,
+    };
+  }
 
   getMoveFromBot() {
     const move = this.props.playground.get_move();
@@ -379,6 +445,7 @@ export class Game extends React.Component {
           selectedCardInfo={selected_card_info}
           selectedDie={this.state.selected_die}
         />
+        <Fight isOn={this.canFight()} onClick={() => this.handleFightClick()} />
         <History moves={this.state.history} />
       </div>
     );
@@ -415,6 +482,11 @@ function ppMove(move) {
         const from = move[attr][1];
         const to = move[attr][2];
         return 'move ' + ppDie(what) + ' from card ' + JSON.stringify(from) + ' to card ' + JSON.stringify(to);
+      }
+
+      case 'Fight': {
+        const where = move[attr];
+        return 'fight at ' + JSON.stringify(where);
       }
 
       default:
@@ -472,4 +544,14 @@ function dieImage(color, value) {
 
 function ppDie(die) {
   return die.color + die.value;
+}
+
+function firstIsLoser(die1, die2) {
+  if (die1.color === 'White' && die2.value === 6) {
+    return false;
+  } else if (die2.color === 'White' && die1.value === 6) {
+    return true;
+  } else {
+    return die1.value < die2.value;
+  }
 }

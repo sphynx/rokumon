@@ -42,11 +42,16 @@
 
 .dice-stock.bottom {
   margin-top: 30px;
-  margin-bottom: 100px;
+  margin-bottom: 30px;
 }
 
 .die {
   margin-right: 10px;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -o-user-select: none;
+  user-select: none;
 }
 
 .dice-stock > img:last-child {
@@ -57,6 +62,36 @@
   transform: scale(1.2);
 }
 
+/* Fight */
+
+button { /* TODO: just use normalize.css */
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
+  overflow: visible;
+  text-transform: none;
+  -webkit-appearance: button;
+}
+
+.fight {
+  letter-spacing: 0.15rem;
+  font-size: 2rem;
+  font-weight: 500;
+  background-color:#6c5fac;
+  color: white;
+  height: 50px;
+  border: 0px;
+  border-radius: 5px;
+  padding: 0.1em 1.5em 0em;
+  text-transform: uppercase;
+}
+
+.fight:active {
+  transform: scale(1.05);
+  background-color: #7663d3;
+}
+
 /* Extra info */
 
 .game-info {
@@ -64,5 +99,5 @@
 }
 
 .history {
-  margin-top: 0px;
+  margin-top: 100px;
 }

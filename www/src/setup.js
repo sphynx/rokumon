@@ -13,7 +13,7 @@ export class GameSetup extends React.Component {
 
     this.state = {
       opponents: 'bot',
-      level: 2,
+      level: 3,
       player_goes_first: true,
     };
   }
@@ -81,7 +81,7 @@ function Level(props) {
   return (
     <div className="option-block">
       <label className="option-label">Select game level:</label>
-      <select defaultValue="2" onInput={(e) => props.onInput(e)}>
+      <select defaultValue="3" onInput={(e) => props.onInput(e)}>
         <option value="1">Level 1 - Six cards, no Fight, no Surprise</option>
         <option value="2">Level 2 - Seven cards, no Fight, no Surprise</option>
         <option value="3">Level 3 - Seven cards, no Surprise</option>
