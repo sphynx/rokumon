@@ -74,7 +74,7 @@ class WasmLoader extends React.Component {
 
 const App = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/rokumon">
       <Switch>
         <Route path="/game/:opponent/:level/:player_goes" component={WasmLoader} />
         <Route path="/default">
