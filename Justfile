@@ -20,3 +20,6 @@ play:
 
 clean:
     cargo clean
+
+deploy: build_prod
+    rsync --checksum --progress -ave ssh www/build/* sphynx@iveselov.info:/srv/projects/rokumon
