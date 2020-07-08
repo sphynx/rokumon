@@ -194,7 +194,7 @@ and it will work. `cfg_if` is just a clever declarative macro defined with `macr
 
 ## React and long calls to WebAssembly.
 
-In order to organize a game between a human and a bot, I needed to get moves alternatingly from the bot and from human. Getting move from human is easy in React: a move is basically a JS object produced in an event handler, i.e. user clicks a die and a card, JS event handler produces certain move object and then I apply that move object to the state, update the state and Reacts re-renders the view and updates DOM. 
+In order to organize a game between a human and a bot, I needed to get moves alternatingly from the bot and from human. Getting move from human is easy in React: a move is basically a JS object produced in an event handler, i.e. user clicks a die and a card, JS event handler produces certain move object and then I apply that move object to the state, update the state and Reacts re-renders the view and updates DOM.
 
 The question is: how and when do I need to request bot's move? I started with having an explicit button: "Get bot's move", you click that button, JS makes a call to WebAssembly, everything freezes for 3 seconds and then you get your move and then everything happens in the same way as this move has been received from human: the state is updated, UI is redrawn.
 
@@ -229,3 +229,30 @@ See [Flexbug #9](https://github.com/philipwalton/flexbugs#flexbug-9) for more de
 So `object-position` does not work as expected for them and one can't use `object-position: center` to center the image.
 
 See ["Hot to scale SVG" article from css-tricks](https://css-tricks.com/scale-svg) for details.
+
+# Server configuration
+
+## Serving at relative path
+
+If you want to serve you app not in the root, but somewhere else (i.e. in my case it is served under `/rokumon`) I've just followed this guide:
+
+https://create-react-app.dev/docs/deployment#building-for-relative-paths
+
+Basically you have to set "homepage" property in `package.json` and basename property in `<BrowserRouter>` for client side routing, sweet!
+
+Note that there were some other tutorials found on the web which proposed longer and more involved solutions, not sure why.
+
+## MIME Types
+
+It looks like serving WASM on a web server requires a little bit of MIME types configuration.
+I use nginx, so in my case I had to add
+
+```
+types {
+    application/wasm wasm;
+}
+```
+
+immediately after `include mime.types;` stanza in the `nginx.config`.
+
+Note that it's important to add it there (when I added it inside `server` context -- it was overriding all the types instead of appending to them).
