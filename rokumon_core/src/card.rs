@@ -176,23 +176,26 @@ impl Deck {
 
     /// A standard deck with 4 Jades and 3 Gold cards which are
     /// randomly shuffled.
-    #[allow(unused)]
     pub fn seven_shuffled() -> Self {
         let mut deck = Deck::ordered("jjjjggg").unwrap();
         deck.shuffle();
         deck
     }
 
-    /// A deck with 3 Jades and 3 Gold cards.
-    #[allow(unused)]
+    /// A deck with 6 cards selected out of 4 Jade and 3 Gold cards.
     pub fn six_shuffled() -> Self {
-        let mut deck = Deck::ordered("jjjggg").unwrap();
+        let mut deck = Deck::ordered("jjjjggg").unwrap();
         deck.shuffle();
+        deck.drop_one_card();
         deck
     }
 
     fn shuffle(&mut self) {
         let mut rng = rand::thread_rng();
         self.cards.as_mut_slice().shuffle(&mut rng);
+    }
+
+    fn drop_one_card(&mut self) {
+        self.cards.truncate(self.cards.len() - 1);
     }
 }
