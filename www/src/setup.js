@@ -85,9 +85,6 @@ function Level(props) {
         <option value="1">Level 1 - Six cards, no Fight, no Surprise</option>
         <option value="2">Level 2 - Seven cards, no Fight, no Surprise</option>
         <option value="3">Level 3 - Seven cards, no Surprise</option>
-        <option value="4">Level 4 - Seven cards, all moves</option>
-        <option value="5">Level 5 - Seven cards with Fort, all moves</option>
-        <option value="6">Level 6 - Automa</option>
       </select>
     </div>
   );
