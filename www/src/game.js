@@ -3,10 +3,12 @@ import './game.css';
 import React from 'react';
 import _ from 'lodash';
 
+import red0 from './img/red0.svg'
 import red2 from './img/red2.svg'
 import red4 from './img/red4.svg'
 import red6 from './img/red6.svg'
 
+import black0 from './img/black0.svg'
 import black1 from './img/black1.svg'
 import black3 from './img/black3.svg'
 import black5 from './img/black5.svg'
@@ -183,7 +185,7 @@ export class Game extends React.Component {
   canFight() {
     if (this.state.selected_card) {
       let card = this.getCardAtCoord(this.state.board, this.state.selected_card);
-      if (card.dice.length == 2) {
+      if (card.dice.length === 2) {
         const first_owner = dieBelongsToPlayer1(card.dice[0]);
         const second_owner = dieBelongsToPlayer1(card.dice[1]);
         return (this.state.player1_moves === first_owner)
@@ -531,12 +533,16 @@ function dieImage(color, value) {
     return red4;
   } else if (color === 'Red' && value === 6) {
     return red6;
+  } else if (color === 'Red' && value === 0) {
+    return red0;
   } else if (color === 'Black' && value === 1) {
     return black1;
   } else if (color === 'Black' && value === 3) {
     return black3;
   } else if (color === 'Black' && value === 5) {
     return black5;
+  } else if (color === 'Black' && value === 0) {
+    return black0;
   } else if (color === 'White' && value === 1) {
     return black_star;
   };

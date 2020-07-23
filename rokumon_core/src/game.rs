@@ -29,7 +29,7 @@ impl Player {
             vec![d(Red, 2), d(Red, 2), d(Red, 4), d(Red, 6)]
         } else {
             // No difference then, just generate 4 equal dice.
-            vec![d(Red, 2); 4]
+            vec![d(Red, 0); 4]
         };
 
         Player {
@@ -45,7 +45,7 @@ impl Player {
             vec![d(Black, 1), d(Black, 3), d(Black, 3), d(Black, 5), d(White, 1)]
         } else {
             // No difference then, just generate 5 equal dice.
-            vec![d(Black, 1); 5]
+            vec![d(Black, 0); 5]
         };
 
         Player {
@@ -1205,23 +1205,23 @@ mod test {
 
         apply_moves!(
             game,
-            place!(r, 2 => 2, 3),
-            place!(b, 1 => 1, 2),
-            mov!(r, 2 => 2, 3 => 1, 2),
-            place!(b, 1 => 1, 1),
-            place!(r, 2 => 2, 3),
-            place!(b, 1 => 1, 3),
-            place!(r, 2 => 2, 2),
-            mov!(b, 1 => 1, 3 => 2, 3),
-            mov!(r, 2 => 2, 2 => 1, 1),
-            place!(b, 1 => 1, 3),
-            place!(r, 2 => 2, 2),
-            mov!(b, 1 => 1, 3 => 2, 1),
-            mov!(r, 2 => 2, 2 => 2, 1),
-            place!(b, 1 => 2, 2),
-            mov!(r, 2 => 1, 1 => 2, 2),
-            mov!(b, 1 => 1, 1 => 1, 3),
-            mov!(r, 2 => 2, 1 => 1, 3)
+            place!(r, 0 => 2, 3),
+            place!(b, 0 => 1, 2),
+            mov!(r, 0 => 2, 3 => 1, 2),
+            place!(b, 0 => 1, 1),
+            place!(r, 0 => 2, 3),
+            place!(b, 0 => 1, 3),
+            place!(r, 0 => 2, 2),
+            mov!(b, 0 => 1, 3 => 2, 3),
+            mov!(r, 0 => 2, 2 => 1, 1),
+            place!(b, 0 => 1, 3),
+            place!(r, 0 => 2, 2),
+            mov!(b, 0 => 1, 3 => 2, 1),
+            mov!(r, 0 => 2, 2 => 2, 1),
+            place!(b, 0 => 2, 2),
+            mov!(r, 0 => 1, 1 => 2, 2),
+            mov!(b, 0 => 1, 1 => 1, 3),
+            mov!(r, 0 => 2, 1 => 1, 3)
         );
 
         assert_eq!(game.generate_moves().len(), 0);

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   inkscape:version="1.0 (4035a4f, 2020-05-01)"
+   sodipodi:docname="black0.svg"
+   id="svg187"
+   version="1.1"
+   viewBox="0 0 40 40"
+   height="40"
+   width="40">
+  <metadata
+     id="metadata191">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     inkscape:current-layer="Group_139"
+     inkscape:window-maximized="0"
+     inkscape:window-y="23"
+     inkscape:window-x="0"
+     inkscape:cy="20"
+     inkscape:cx="20"
+     inkscape:zoom="17.675"
+     showgrid="false"
+     id="namedview189"
+     inkscape:window-height="915"
+     inkscape:window-width="1536"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     guidetolerance="10"
+     gridtolerance="10"
+     objecttolerance="10"
+     borderopacity="1"
+     bordercolor="#666666"
+     pagecolor="#ffffff" />
+  <defs
+     id="defs181">
+    <style
+       id="style179">
+      .cls-1 {
+        fill: #3f3b76;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <g
+     transform="translate(-217 -156)"
+     data-name="Group 173"
+     id="Group_173">
+    <rect
+       transform="translate(217 156)"
+       rx="5"
+       height="40"
+       width="40"
+       class="cls-1"
+       data-name="Rectangle 87"
+       id="Rectangle_87" />
+    <g
+       transform="translate(233 172)"
+       data-name="Group 139"
+       id="Group_139" />
+  </g>
+</svg>
