@@ -8,6 +8,8 @@ Rules of the game can be found in this repository in [misc/docs/rules.pdf](misc/
 
 Also, if you don't have a worthy opponent, you can always play against my bot! :)
 
+You can try it online here (it assumes that you know the rules): http://iveselov.info/rokumon/
+
 The AI is written in Rust and compiled to WebAssembly to be used in the web interface (which is written in JavaScript using React). This allows to run a reasonably strong computer opponent right in your browser (and it even works on smartphones and other mobile devices).
 
 # Game setup screen
