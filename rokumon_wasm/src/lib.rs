@@ -12,17 +12,17 @@ use rokumon_core::play::Strategy;
 #[wasm_bindgen]
 pub struct Opts {
     enable_fight: bool,
-    hex_grid: bool,
+    grid: String,
     bot_goes_first: bool,
     duration: u8,
 }
 
 #[wasm_bindgen]
 impl Opts {
-    pub fn new(enable_fight: bool, hex_grid: bool, bot_goes_first: bool, duration: u8) -> Self {
+    pub fn new(enable_fight: bool, grid: String, bot_goes_first: bool, duration: u8) -> Self {
         Self {
             enable_fight,
-            hex_grid,
+            grid,
             bot_goes_first,
             duration,
         }
@@ -41,13 +41,20 @@ pub struct Playground {
 impl Playground {
     pub fn new(opts: Opts) -> Self {
         utils::set_panic_hook();
-
-        let game = if opts.hex_grid {
-            let deck = Deck::seven_shuffled();
-            Game::new(Layout::Bricks7, deck, Rules::new(opts.enable_fight, false))
-        } else {
-            let deck = Deck::six_shuffled();
-            Game::new(Layout::Rectangle6, deck, Rules::new(opts.enable_fight, false))
+        let game = match opts.grid.as_str() {
+            "Bricks7" => {
+                let deck = Deck::seven_shuffled();
+                Game::new(Layout::Bricks7, deck, Rules::new(opts.enable_fight, false))
+            }
+            "Rectangle6" => {
+                let deck = Deck::six_shuffled();
+                Game::new(Layout::Rectangle6, deck, Rules::new(opts.enable_fight, false))
+            }
+            "Hex7" => {
+                let deck = Deck::seven_shuffled();
+                Game::new(Layout::Hex7, deck, Rules::new(opts.enable_fight, false))
+            }
+            _ => panic!("Unexpected grid type sent"),
         };
 
         let ai = AlphaBetaAI::with_duration(opts.bot_goes_first, opts.duration as u64);

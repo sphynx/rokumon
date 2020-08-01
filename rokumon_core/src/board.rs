@@ -59,6 +59,7 @@ pub struct Board {
     pub grid: Grid,
     #[cfg_attr(feature = "with_serde", serde(with = "serde_cards"))]
     pub cards: Cards,
+    pub layout: Layout,
     adj_triples: Vec<(Coord, Coord, Coord)>,
 }
 
@@ -89,7 +90,7 @@ impl Board {
         let mut cards = deck.into_iter();
         let grid;
 
-        match layout {
+        match layout.clone() {
             Layout::Bricks7 => {
                 grid = Grid::Hex;
                 // I use (0, 0, 0) coordinate for bottom-left
@@ -143,6 +144,35 @@ impl Board {
                 }
                 assert!(cards.next().is_none(), "Board::new: some cards left in the deck");
             }
+            Layout::Hex7 => {
+                /*
+                     +----+----+
+                x    |  1 |  2 |
+                y    | -1 | -1 |
+                z    |  0 | -1 |                          -
+                  +--+-+--+-+--+-+
+                x |  0 |  1 |  2 |
+                y |  0 |  0 |  0 |
+                z |  0 | -1 | -2 |
+                  +--+-+--+-+--+-+
+                x    |  0 |  1 |
+                y    |  1 |  1 |
+                z    | -1 | -2 |
+                     +----+----+
+                */
+                grid = Grid::Hex;
+
+                let coords = [(1, -1), (2, -1), (0, 0), (1, 0), (2, 0), (0, 1), (1, 1)];
+
+                for (x, y) in &coords {
+                    cards_at_positions.insert(
+                        Coord::new_hex(*x, *y),
+                        cards.next().expect("Board::new: not enough cards in deck"),
+                    );
+                }
+
+                assert!(cards.next().is_none(), "Board::new: some cards left in the deck");
+            }
             Layout::Custom(g, coords) => {
                 grid = g;
                 for &c in coords.iter() {
@@ -150,13 +180,13 @@ impl Board {
                 }
                 assert!(cards.next().is_none(), "Board::new: some cards left in the deck");
             }
-            Layout::Hex7 => unimplemented!(),
         }
 
         let adj_triples = Self::adjacent_triples(&grid, cards_at_positions.keys());
 
         Self {
             grid,
+            layout,
             cards: cards_at_positions,
             adj_triples,
         }
@@ -451,7 +481,6 @@ impl fmt::Display for Board {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -483,4 +512,17 @@ mod test {
         assert_eq!(None, it.next());
     }
 
+    #[test]
+    fn test_hex() {
+        let b = Board::new(Layout::Hex7, Deck::seven_shuffled());
+        let mut it = b.cards.keys();
+        assert_eq!(Some(&Coord::new_hex(0, 0)), it.next());
+        assert_eq!(Some(&Coord::new_hex(0, 1)), it.next());
+        assert_eq!(Some(&Coord::new_hex(1, -1)), it.next());
+        assert_eq!(Some(&Coord::new_hex(1, 0)), it.next());
+        assert_eq!(Some(&Coord::new_hex(1, 1)), it.next());
+        assert_eq!(Some(&Coord::new_hex(2, -1)), it.next());
+        assert_eq!(Some(&Coord::new_hex(2, 0)), it.next());
+        assert_eq!(None, it.next());
+    }
 }

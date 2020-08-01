@@ -74,13 +74,16 @@ function DiceStock(props) {
 
 function Board(props) {
   const styles = {
-    // Hex:       4 x card_width + 3 * horiz_gap
-    // Rectangle: 3 x card_width + 2 * horiz_gap
+    // minWidth:
+    //
+    // Bricks7:             4 x card_width + 3 * horiz_gap
+    // Rectangle6 and Hex7: 3 x card_width + 2 * horiz_gap
 
     // We have to specify this manually in JS, since there is
     // no easy way to calculate the size taken by absolutely positioned elements
     // (cards).
-    "minWidth": props.grid === "Hex" ? "315px" : "235px",
+    "minWidth": props.layout === "Bricks7" ? "315px" : "235px",
+    "minHeight": props.layout === "Hex7" ? "345px" : "230px",
   };
   return (
     <div className="card-board" style={styles}>
@@ -162,6 +165,7 @@ export class Game extends React.Component {
     this.state = {
       board: {
         grid: board.grid,
+        layout: board.layout,
         cards: board.cards
       },
       player1_moves,
@@ -433,6 +437,7 @@ export class Game extends React.Component {
         <Board
           cards={this.state.board.cards}
           grid={this.state.board.grid}
+          layout={this.state.board.layout}
           selectedCard={this.state.selected_card}
           onClick={(coord) => this.handleCardClick(coord)}
         />

@@ -20,13 +20,22 @@ class GameLoader extends React.Component {
     }
 
     const enable_fight = game_opts.level > 2;
-    const hex_grid = game_opts.level !== 1;
+
+    var grid = "Bricks7";
+    switch (game_opts.level) {
+      case 1: grid = "Rectangle6"; break;
+      case 2: grid = "Bricks7"; break;
+      case 3: grid = "Bricks7"; break;
+      case 4: grid = "Hex7"; break;
+      default: grid = "Bricks7"; break;
+    }
+
     const bot_moves_first = game_opts.player_goes === "second";
     const duration = 1;
 
     let wasm = props.wasm;
 
-    const opts = wasm.Opts.new(enable_fight, hex_grid, bot_moves_first, duration);
+    const opts = wasm.Opts.new(enable_fight, grid, bot_moves_first, duration);
     let playground = wasm.Playground.new(opts);
     const game = playground.get_game();
 
