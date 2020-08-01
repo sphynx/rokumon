@@ -29,7 +29,7 @@ impl Player {
             vec![d(Red, 2), d(Red, 2), d(Red, 4), d(Red, 6)]
         } else {
             // No difference then, just generate 4 equal dice.
-            vec![d(Red, 0); 4]
+            vec![d(Red, 2); 4]
         };
 
         Player {
@@ -45,7 +45,7 @@ impl Player {
             vec![d(Black, 1), d(Black, 3), d(Black, 3), d(Black, 5), d(White, 1)]
         } else {
             // No difference then, just generate 5 equal dice.
-            vec![d(Black, 0); 5]
+            vec![d(Black, 1); 5]
         };
 
         Player {
