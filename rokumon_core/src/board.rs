@@ -95,6 +95,18 @@ impl Board {
                 // I use (0, 0, 0) coordinate for bottom-left
                 // position. Two rows: top row has y = -1, bottom row
                 // has y = 0.
+
+                /*
+                      +----+----+----+
+                x     |  1 |  2 |  3 |
+                y     | -1 | -1 | -1 |
+                z     |  0 | -1 | -2 |
+                   +--+-+--+-+--+-+--+-+
+                x  |  0 |  1 |  2 |  3 |
+                y  |  0 |  0 |  0 |  0 |
+                z  |  0 | -1 | -2 | -3 |
+                   +----+----+----+----+
+                */
                 for y in -1..=0 {
                     for x in -y..4 {
                         // 4 cards in the bottom row, 3 cards in the top row.
@@ -107,6 +119,17 @@ impl Board {
                 assert!(cards.next().is_none(), "Board::new: some cards left in the deck");
             }
             Layout::Rectangle6 => {
+                /*
+                  +----+----+----+
+                x |  0 |  1 |  2 |
+                y | -1 | -1 | -1 |
+                z |  0 |  0 |  0 |
+                  +----+----+----+
+                x |  0 |  1 |  2 |
+                y |  0 |  0 |  0 |
+                z |  0 |  0 |  0 |
+                  +----+----+----
+                */
                 grid = Grid::Square;
                 // Again, (0, 0, 0) is bottom-left corner. We have two
                 // rows with y = -1 (top) and y = 0 (bottom)
@@ -426,4 +449,38 @@ impl fmt::Display for Board {
 
         Ok(())
     }
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_rectangle() {
+        let b = Board::new(Layout::Rectangle6, Deck::six_shuffled());
+        let mut it = b.cards.keys();
+        assert_eq!(Some(&Coord::new_square(0, -1)), it.next());
+        assert_eq!(Some(&Coord::new_square(0, 0)), it.next());
+        assert_eq!(Some(&Coord::new_square(1, -1)), it.next());
+        assert_eq!(Some(&Coord::new_square(1, 0)), it.next());
+        assert_eq!(Some(&Coord::new_square(2, -1)), it.next());
+        assert_eq!(Some(&Coord::new_square(2, 0)), it.next());
+        assert_eq!(None, it.next());
+    }
+
+    #[test]
+    fn test_bricks() {
+        let b = Board::new(Layout::Bricks7, Deck::seven_shuffled());
+        let mut it = b.cards.keys();
+        assert_eq!(Some(&Coord::new_hex(0, 0)), it.next());
+        assert_eq!(Some(&Coord::new_hex(1, -1)), it.next());
+        assert_eq!(Some(&Coord::new_hex(1, 0)), it.next());
+        assert_eq!(Some(&Coord::new_hex(2, -1)), it.next());
+        assert_eq!(Some(&Coord::new_hex(2, 0)), it.next());
+        assert_eq!(Some(&Coord::new_hex(3, -1)), it.next());
+        assert_eq!(Some(&Coord::new_hex(3, 0)), it.next());
+        assert_eq!(None, it.next());
+    }
+
 }
