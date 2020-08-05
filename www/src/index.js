@@ -19,7 +19,7 @@ class GameLoader extends React.Component {
       game_opts = { opponent: 'bot', level: 2, player_goes: 'first' };
     }
 
-    const enable_fight = game_opts.level > 2;
+    const enable_fight = game_opts.level == 3;
 
     var grid = "Bricks7";
     switch (game_opts.level) {

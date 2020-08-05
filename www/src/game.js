@@ -157,10 +157,6 @@ export class Game extends React.Component {
 
     const game = props.game_data;
     const board = game.board;
-    const player1 = game.player1;
-    const player2 = game.player2;
-    const player1_moves = game.player1_moves;
-    const history = game.history;
 
     this.state = {
       board: {
@@ -168,10 +164,11 @@ export class Game extends React.Component {
         layout: board.layout,
         cards: board.cards
       },
-      player1_moves,
-      player1,
-      player2,
-      history,
+      player1_moves: game.player1_moves,
+      player1: game.player1,
+      player2: game.player2,
+      history: game.history,
+      rules: game.rules,
 
       selected_card: null,
       selected_die: null,
@@ -187,7 +184,7 @@ export class Game extends React.Component {
   }
 
   canFight() {
-    if (this.state.selected_card) {
+    if (this.state.selected_card && this.state.rules.enable_fight_move) {
       let card = this.getCardAtCoord(this.state.board, this.state.selected_card);
       if (card.dice.length === 2) {
         const first_owner = dieBelongsToPlayer1(card.dice[0]);
