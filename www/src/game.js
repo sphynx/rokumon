@@ -113,7 +113,7 @@ function History(props) {
       History:
       <ol>
         {props.moves.map((move, ix) =>
-          <li key={ix}>Move {ix}: {ppMove(move)}</li>
+          <li key={ix}>{ppMove(move)}</li>
         )}
       </ol>
     </div>
@@ -478,25 +478,29 @@ function ppMove(move) {
       case 'Place': {
         const what = move[attr][0];
         const where = move[attr][1];
-        return 'place ' + ppDie(what) + ' at card with coordinates ' + JSON.stringify(where);
+        return 'Place ' + ppDie(what) + ' at card ' + ppCoord(where);
       }
 
       case 'Move': {
         const what = move[attr][0];
         const from = move[attr][1];
         const to = move[attr][2];
-        return 'move ' + ppDie(what) + ' from card ' + JSON.stringify(from) + ' to card ' + JSON.stringify(to);
+        return 'Move ' + ppDie(what) + ' from card ' + ppCoord(from) + ' to card ' + ppCoord(to);
       }
 
       case 'Fight': {
         const where = move[attr];
-        return 'fight at ' + JSON.stringify(where);
+        return 'Fight at card ' + ppCoord(where);
       }
 
       default:
         return 'unknown move';
     }
   }
+}
+
+function ppCoord(coord) {
+  return coord.x + '/' + coord.y + '/' + coord.z;
 }
 
 function coordToPosition(grid, coord) {
@@ -551,7 +555,7 @@ function dieImage(color, value) {
 }
 
 function ppDie(die) {
-  return die.color + die.value;
+  return die.color + ' ' + die.value;
 }
 
 function firstIsLoser(die1, die2) {
