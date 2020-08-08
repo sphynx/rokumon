@@ -1168,6 +1168,32 @@ mod test {
     }
 
     #[test]
+    pub fn test_end_condition() -> Fallible<()> {
+        let deck = Deck::ordered("jgjjjgg")?;
+        let mut game = Game::new(Layout::Bricks7, deck, Rules::new(false, false));
+        apply_moves!(
+            game,
+            place!(r, 2 => 2, 3),
+            place!(b, 1 => 2, 1),
+            place!(r, 2 => 2, 4),
+            mov!(b, 1 => 2, 1 => 2, 3),
+            place!(r, 2 => 1, 2),
+            place!(b, 1 => 2, 1),
+            place!(r, 2 => 2, 2),
+            mov!(b, 1 => 2, 1 => 2, 4),
+            mov!(r, 2 => 1, 2 => 2, 1),
+            mov!(b, 1 => 2, 4 => 2, 2),
+            mov!(r, 2 => 2, 1 => 1, 2),
+        );
+
+        assert_eq!(game.result, GameResult::InProgress);
+        apply_moves!(game, place!(b, 1 => 2, 1));
+        assert_eq!(game.result, GameResult::SecondPlayerWon);
+
+        Ok(())
+    }
+
+    #[test]
     pub fn test_move_gen() -> Fallible<()> {
         let deck = Deck::ordered("gggjjjj")?;
         let mut game = Game::new(Layout::Bricks7, deck, Default::default());
@@ -1205,23 +1231,23 @@ mod test {
 
         apply_moves!(
             game,
-            place!(r, 0 => 2, 3),
-            place!(b, 0 => 1, 2),
-            mov!(r, 0 => 2, 3 => 1, 2),
-            place!(b, 0 => 1, 1),
-            place!(r, 0 => 2, 3),
-            place!(b, 0 => 1, 3),
-            place!(r, 0 => 2, 2),
-            mov!(b, 0 => 1, 3 => 2, 3),
-            mov!(r, 0 => 2, 2 => 1, 1),
-            place!(b, 0 => 1, 3),
-            place!(r, 0 => 2, 2),
-            mov!(b, 0 => 1, 3 => 2, 1),
-            mov!(r, 0 => 2, 2 => 2, 1),
-            place!(b, 0 => 2, 2),
-            mov!(r, 0 => 1, 1 => 2, 2),
-            mov!(b, 0 => 1, 1 => 1, 3),
-            mov!(r, 0 => 2, 1 => 1, 3)
+            place!(r, 2 => 2, 3),
+            place!(b, 1 => 1, 2),
+            mov!(r, 2 => 2, 3 => 1, 2),
+            place!(b, 1 => 1, 1),
+            place!(r, 2 => 2, 3),
+            place!(b, 1 => 1, 3),
+            place!(r, 2 => 2, 2),
+            mov!(b, 1 => 1, 3 => 2, 3),
+            mov!(r, 2 => 2, 2 => 1, 1),
+            place!(b, 1 => 1, 3),
+            place!(r, 2 => 2, 2),
+            mov!(b, 1 => 1, 3 => 2, 1),
+            mov!(r, 2 => 2, 2 => 2, 1),
+            place!(b, 1 => 2, 2),
+            mov!(r, 2 => 1, 1 => 2, 2),
+            mov!(b, 1 => 1, 1 => 1, 3),
+            mov!(r, 2 => 2, 1 => 1, 3)
         );
 
         assert_eq!(game.generate_moves().len(), 0);
