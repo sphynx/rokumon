@@ -26,7 +26,7 @@ function Card(props) {
       onClick={props.onClick}>
 
       {props.dice.map((d, ix) =>
-        <DieOnCard key={ix} color={d.color} value={d.value} />
+        <DieOnCard key={ix} color={d.color} value={d.value} borderColor={kindClass} />
       )}
     </div>
   );
@@ -51,7 +51,7 @@ function DieOnCard(props) {
       src={dieImage(props.color, props.value)}
       onClick={props.onClick}
       alt={`${props.color} die with value ${props.value}`}
-      className={`die ${selected_clz}`}
+      className={`die on-card ${selected_clz} on-${props.borderColor}`}
     />
   );
 }

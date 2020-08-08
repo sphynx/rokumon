@@ -53,6 +53,52 @@
   user-select: none;
 }
 
+/* sole dice */
+.on-card:only-child {
+  transform: translate(15px, 35px);
+}
+
+/* group of two dice */
+.on-card:nth-child(2):nth-last-child(1) {
+  /* top */
+  transform: translate(4px, -25px);
+  z-index: 2;
+}
+.on-card:nth-child(1):nth-last-child(2) {
+  /* bottom */
+  transform: translate(25px, 45px);
+  z-index: 1;
+}
+
+/* groups of three dice */
+.on-card:nth-child(3):nth-last-child(1) {
+  /* top */
+  transform: translate(25px, -95px);
+  z-index: 3;
+}
+
+.on-card:nth-child(2):nth-last-child(2) {
+  /* middle */
+  transform: translate(4px, -15px);
+  z-index: 2;
+}
+
+.on-card:nth-child(1):nth-last-child(3) {
+  /* bottom */
+  transform: translate(25px, 63px);
+  z-index: 1;
+}
+
+.on-jade {
+  border: #21cebe solid 3px;
+  border-radius: 10px;
+}
+
+.on-gold {
+  border: #f8c945 solid 3px;
+  border-radius: 10px;
+}
+
 .dice-stock > img:last-child {
   margin-right: 0;
 }
