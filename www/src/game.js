@@ -34,14 +34,20 @@ function Card(props) {
 
 function Die(props) {
   const selected_clz = props.selected ? 'selected' : '';
-  return (
-    <img
-      src={dieImage(props.color, props.value)}
-      onClick={props.onClick}
-      alt={`${props.color} die with value ${props.value}`}
-      className={`die ${selected_clz}`}
-    />
-  );
+  if (props.value === 0) {
+    return (
+      <div className="vacant-slot"></div>
+    );
+  } else {
+    return (
+      <img
+        src={dieImage(props.color, props.value)}
+        onClick={props.onClick}
+        alt={`${props.color} die with value ${props.value}`}
+        className={`die ${selected_clz}`}
+      />
+    );
+  }
 }
 
 function DieOnCard(props) {
@@ -208,8 +214,20 @@ export class Game extends React.Component {
     return coord_card ? coord_card[1] : undefined;
   }
 
+  replaceDieWithEmpty(dice, target_die) {
+    const ix = dice.findIndex(die => _.isEqual(die, target_die));
+    dice[ix] = { value: 0 };
+  }
+
+  putDieInEmptySlot(dice, new_die) {
+    const ix = dice.findIndex(die => _.isEqual(die, { value: 0 }));
+    dice[ix] = new_die;
+  }
+
+
   deleteDie(dice, target_die) {
-    dice.splice(dice.findIndex(die => _.isEqual(die, target_die)), 1);
+    const ix = dice.findIndex(die => _.isEqual(die, target_die));
+    dice.splice(ix, 1);
   }
 
   handleDieClick(die) {
@@ -308,11 +326,11 @@ export class Game extends React.Component {
     let player1_copy = _.cloneDeep(state.player1);
     let player2_copy = _.cloneDeep(state.player2);
 
-    // Delete die from this player's supply.
+    // Replace die with empty spot in player's supply.
     if (state.player1_moves) {
-      this.deleteDie(player1_copy.dice, what);
+      this.replaceDieWithEmpty(player1_copy.dice, what);
     } else {
-      this.deleteDie(player2_copy.dice, what);
+      this.replaceDieWithEmpty(player2_copy.dice, what);
     }
 
     // Put the die on the card.
@@ -358,9 +376,9 @@ export class Game extends React.Component {
     this.deleteDie(card.dice, loser);
 
     if (dieBelongsToPlayer1(loser)) {
-      player1_copy.dice.push(loser);
+      this.putDieInEmptySlot(player1_copy.dice, loser);
     } else {
-      player2_copy.dice.push(loser);
+      this.putDieInEmptySlot(player2_copy.dice, loser);
     }
 
     return {
