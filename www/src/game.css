@@ -116,6 +116,11 @@
   transform: scale(1.2);
 }
 
+.move-indicator {
+  width: 20px;
+  transform: translate(-5px, -10px);
+}
+
 /* Fight */
 
 button { /* TODO: just use normalize.css */

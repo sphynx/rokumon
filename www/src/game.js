@@ -14,6 +14,8 @@ import black3 from './img/black3.svg'
 import black5 from './img/black5.svg'
 import black_star from './img/black-star.svg'
 
+import move_indicator from './img/move-indicator.svg'
+
 function Card(props) {
   const kindClass = props.kind.toLowerCase();
   const selectedClass = props.selected ? 'selected' : '';
@@ -63,8 +65,10 @@ function DieOnCard(props) {
 }
 
 function DiceStock(props) {
+  const styles = props.toMove ? {} : { visibility: "hidden" };
   return (
     <div className={`dice-stock ${props.className}`}>
+      <img src={move_indicator} alt="move indicator" className="move-indicator" style={styles} />
       {props.dice.map((d, ix) =>
         <Die
           key={ix}
@@ -437,6 +441,8 @@ export class Game extends React.Component {
 
   render() {
     const who_moves = this.state.player1_moves ? this.state.player1.name : this.state.player2.name;
+    const bot_moves = this.props.bot_moves_first === this.state.player1_moves;
+
     const sel_card_coord = this.state.selected_card;
     const card = this.getCardAtCoord(this.state.board, sel_card_coord);
     const selected_card_info = card ? card.kind : 'None';
@@ -448,6 +454,7 @@ export class Game extends React.Component {
           selectedDie={this.state.selected_die}
           onClick={(die) => this.handleDieClick(die)}
           className="top"
+          toMove={bot_moves}
         />
         <Board
           cards={this.state.board.cards}
@@ -461,6 +468,7 @@ export class Game extends React.Component {
           selectedDie={this.state.selected_die}
           onClick={(die) => this.handleDieClick(die)}
           className="bottom"
+          toMove={!bot_moves}
         />
         <GameInfo
           whoMoves={who_moves}
